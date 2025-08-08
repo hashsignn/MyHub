@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trading Practice Simulator</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    h2 { margin-top: 1.5em; }
+    .section { border: 1px solid #ddd; padding: 1em; margin-bottom: 1em; }
+    label { display: block; margin-top: 0.5em; }
+    input, select { margin-top: 0.2em; width: 100%; padding: 0.3em; }
+    button { margin-top: 1em; padding: 0.5em 1em; }
+    #timer { font-size: 1.2em; font-weight: bold; margin-top: 0.5em; }
+  </style>
+</head>
+<body>
+
+  <h1>Trading Practice Simulator</h1>
+  <div id="timer">Elapsed: 00:00</div>
+  <button id="startBtn">Start Timer</button>
+  <button id="resetBtn">Reset Timer</button>
+
+  <!-- Stocks Section -->
+  <div class="section" id="stocks">
+    <h2>Stocks</h2>
+    <label>Symbol: <input type="text" id="stockSymbol" placeholder="e.g., AAPL"></label>
+    <label>Quantity: <input type="number" id="stockQty"></label>
+    <label>Order Type:
+      <select id="stockOrderType">
+        <option value="market">Market</option>
+        <option value="limit">Limit</option>
+      </select>
+    </label>
+    <label>Limit Price (if applicable): <input type="number" id="stockLimit"></label>
+    <label>Stop Loss Price: <input type="number" id="stockStop"></label>
+    <button onclick="placeOrder('stocks')">Place Stock Order</button>
+  </div>
+
+  <!-- Options Section -->
+  <div class="section" id="options">
+    <h2>Options</h2>
+    <label>Symbol: <input type="text" id="optSymbol" placeholder="e.g., TSLA"></label>
+    <label>Type:
+      <select id="optType">
+        <option value="call">Call</option>
+        <option value="put">Put</option>
+      </select>
+    </label>
+    <label>Strike Price: <input type="number" id="optStrike"></label>
+    <label>Expiration Date: <input type="date" id="optExp"></label>
+    <label>Quantity: <input type="number" id="optQty"></label>
+    <label>Order Type:
+      <select id="optOrderType">
+        <option value="market">Market</option>
+        <option value="limit">Limit</option>
+      </select>
+    </label>
+    <label>Limit Price (if applicable): <input type="number" id="optLimit"></label>
+    <label>Stop Loss Price: <input type="number" id="optStop"></label>
+    <button onclick="placeOrder('options')">Place Options Order</button>
+  </div>
+
+  <!-- Forex Section -->
+  <div class="section" id="forex">
+    <h2>Forex</h2>
+    <label>Pair: <input type="text" id="forexPair" placeholder="e.g., EUR/USD"></label>
+    <label>Quantity (Lots or Units): <input type="number" id="forexQty"></label>
+    <label>Order Type:
+      <select id="forexOrderType">
+        <option value="market">Market</option>
+        <option value="limit">Limit</option>
+      </select>
+    </label>
+    <label>Limit Price (if applicable): <input type="number" id="forexLimit"></label>
+    <label>Stop Loss Price: <input type="number" id="forexStop"></label>
+    <button onclick="placeOrder('forex')">Place Forex Order</button>
+  </div>
+
+  <script>
+    // Timer Logic
+    let timer, startTime;
+    document.getElementById('startBtn').addEventListener('click', () => {
+      clearInterval(timer);
+      startTime = Date.now();
+      timer = setInterval(() => {
+        const diff = Date.now() - startTime;
+        const mm = String(Math.floor(diff / 60000)).padStart(2, '0');
+        const ss = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+        document.getElementById('timer').textContent = `Elapsed: ${mm}:${ss}`;
+      }, 500);
+    });
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      clearInterval(timer);
+      document.getElementById('timer').textContent = 'Elapsed: 00:00';
+    });
+
+    // Mock Order Placement Logic
+    function placeOrder(type) {
+      const now = new Date().toLocaleTimeString();
+      alert(`Time: ${now}\nPlaced ${type} order (mock).`);
+      console.log(`Placed ${type} order at ${now}`);
+    }
+  </script>
+</body>
+</html>
