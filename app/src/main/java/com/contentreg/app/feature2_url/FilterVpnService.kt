@@ -6,6 +6,11 @@ import android.net.VpnService
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import com.contentreg.app.core.data.di.ServiceLocator
+import com.contentreg.app.feature2_url.classifier.Blocklist
+import com.contentreg.app.feature2_url.classifier.ClassificationReason
+import com.contentreg.app.feature2_url.classifier.UrlClassifier
+import com.contentreg.app.feature2_url.registry.BlockEntrySource
+import com.contentreg.app.feature2_url.registry.UrlNormalizer
 import com.contentreg.app.feature2_url.vpn.TunReadWriteLoop
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +39,7 @@ class FilterVpnService : VpnService() {
     private var loop: TunReadWriteLoop? = null
 
     @Volatile private var blockedDomains: Set<String> = emptySet()
+    private var classifier: UrlClassifier? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         return when (intent?.action) {
@@ -56,6 +62,8 @@ class FilterVpnService : VpnService() {
         scope.launch {
             ServiceLocator.registryRepository.blockedDomains.collect { blockedDomains = it }
         }
+        // Classifier for unseen domains (curated list + keyword heuristics), loaded once.
+        classifier = UrlClassifier(blocklist = Blocklist.load(this))
 
         val pfd = Builder()
             .setSession("ContentReg URL filter")
@@ -76,12 +84,29 @@ class FilterVpnService : VpnService() {
             tunInput = FileInputStream(pfd.fileDescriptor),
             tunOutput = FileOutputStream(pfd.fileDescriptor),
             protect = { socket -> protect(socket) },
-            blockedProvider = { blockedDomains },
+            isHostBlocked = ::decideBlock,
             upstreamDns = InetAddress.getByName(UPSTREAM_DNS),
         )
         loop = tunLoop
         worker = Thread(tunLoop::run, "dns-filter-loop").apply { start() }
         Log.i(TAG, "VPN filter started")
+    }
+
+    /**
+     * Block decision for one DNS query. Registry snapshot first (lookup-before-classify); for an
+     * unseen host, run the classifier and — if it says block — persist it so future lookups are
+     * instant (M2.3 "a new bad URL is classified and written to the registry").
+     */
+    private fun decideBlock(host: String): Boolean {
+        if (UrlNormalizer.hostMatchesSet(host, blockedDomains)) return true
+        val result = classifier?.classifyHost(host) ?: return false
+        if (!result.shouldBlock) return false
+        val source = when (result.reason) {
+            ClassificationReason.KEYWORD_HEURISTIC -> BlockEntrySource.HEURISTIC
+            else -> BlockEntrySource.BLOCKLIST
+        }
+        scope.launch { ServiceLocator.registryRepository.addDomain(host, source) }
+        return true
     }
 
     private fun stopVpn() {

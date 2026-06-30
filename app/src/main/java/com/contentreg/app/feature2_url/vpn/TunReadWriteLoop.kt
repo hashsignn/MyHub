@@ -22,7 +22,7 @@ class TunReadWriteLoop(
     private val tunInput: FileInputStream,
     private val tunOutput: FileOutputStream,
     private val protect: (DatagramSocket) -> Boolean,
-    private val blockedProvider: () -> Set<String>,
+    private val isHostBlocked: (host: String) -> Boolean,
     private val upstreamDns: InetAddress,
 ) {
 
@@ -47,7 +47,7 @@ class TunReadWriteLoop(
             val dns = DnsPacketHandler.extractDnsPayload(packet) ?: continue
             val name = DnsPacketHandler.parseFirstQuestionName(dns)
 
-            val responseDns = if (name != null && DnsPacketHandler.isHostBlocked(name, blockedProvider())) {
+            val responseDns = if (name != null && isHostBlocked(name)) {
                 Log.d(TAG, "Blocking DNS for $name")
                 DnsPacketHandler.buildBlockedDnsResponse(dns)
             } else {

@@ -21,6 +21,23 @@ object UrlNormalizer {
     }
 
     /**
+     * True if [host] — or any of its parent domains — is present in [normalizedSet]. So a set
+     * containing `example.com` matches `example.com` and `cdn.example.com`. [normalizedSet] must
+     * already hold normalized domains.
+     */
+    fun hostMatchesSet(host: String, normalizedSet: Set<String>): Boolean {
+        if (normalizedSet.isEmpty()) return false
+        var current = normalizeDomain(host)
+        while (current.isNotEmpty()) {
+            if (current in normalizedSet) return true
+            val dot = current.indexOf('.')
+            if (dot < 0) break
+            current = current.substring(dot + 1)
+        }
+        return false
+    }
+
+    /**
      * Extracts the registrable host from a URL or bare host string. Returns "" if none can be
      * found. Handles an optional scheme, userinfo, port, path, query and fragment.
      */

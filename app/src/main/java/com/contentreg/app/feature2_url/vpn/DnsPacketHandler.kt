@@ -53,17 +53,8 @@ object DnsPacketHandler {
      * blocking `example.com` also blocks `cdn.example.com`. [blocked] must already be normalized
      * (see [UrlNormalizer.normalizeDomain]).
      */
-    fun isHostBlocked(host: String, blocked: Set<String>): Boolean {
-        if (blocked.isEmpty()) return false
-        var current = UrlNormalizer.normalizeDomain(host)
-        while (current.isNotEmpty()) {
-            if (current in blocked) return true
-            val dot = current.indexOf('.')
-            if (dot < 0) break
-            current = current.substring(dot + 1)
-        }
-        return false
-    }
+    fun isHostBlocked(host: String, blocked: Set<String>): Boolean =
+        UrlNormalizer.hostMatchesSet(host, blocked)
 
     /**
      * Turns a DNS query payload into a refusal response: copies the header + question, sets QR=1,

@@ -39,12 +39,22 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { prefs -> prefs[KEY_TARGET_APPS] = packages }
     }
 
+    /** Which version of the curated blocklist has been seeded into the registry (M2.3). */
+    val blocklistSeedVersion: Flow<Int> = context.dataStore.data.map { prefs ->
+        prefs[KEY_BLOCKLIST_SEED_VERSION] ?: 0
+    }
+
+    suspend fun setBlocklistSeedVersion(version: Int) {
+        context.dataStore.edit { prefs -> prefs[KEY_BLOCKLIST_SEED_VERSION] = version }
+    }
+
     companion object {
         const val DEFAULT_BUDGET_MINUTES = 5
         const val MIN_BUDGET_MINUTES = 1
         const val MAX_BUDGET_MINUTES = 60
         private val KEY_BUDGET_MINUTES = intPreferencesKey("budget_minutes")
         private val KEY_TARGET_APPS = stringSetPreferencesKey("target_apps")
+        private val KEY_BLOCKLIST_SEED_VERSION = intPreferencesKey("blocklist_seed_version")
 
         /** Convenience: minutes → milliseconds. */
         fun minutesToMs(minutes: Int): Long = minutes.toLong() * 60L * 1000L
