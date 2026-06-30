@@ -35,4 +35,12 @@
     <string name="overlay_block_subtitle">You\'ve reached your feed time budget for this hour.</string>
     <string name="overlay_block_reset">Resets in %1$s</string>
     <string name="overlay_block_hint">Leave this app to keep using your phone.</string>
+
+    <!-- M1.4 — settings screen. -->
+    <string name="settings_title">Settings</string>
+    <string name="m14_open_settings">Settings (budget &amp; apps)</string>
+    <string name="settings_budget_heading">Per-hour budget</string>
+    <string name="settings_budget_value">%1$d min / hour</string>
+    <string name="settings_apps_heading">Apps that count</string>
+    <string name="settings_apps_subtitle">Scrolling in these apps draws down the budget.</string>
 </resources>

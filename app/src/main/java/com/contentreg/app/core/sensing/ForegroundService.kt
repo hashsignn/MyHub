@@ -38,8 +38,21 @@ class ForegroundService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         Log.i(TAG, "Accessibility service connected; foreground sensing active.")
+        startSettingsSync()
         startBudgetTicker()
         startBlockController()
+    }
+
+    /**
+     * M1.4 — keep [ScrollMonitor]'s target-app set in sync with the user's settings, so editing the
+     * list in SettingsActivity immediately changes what counts (and what the block guards).
+     */
+    private fun startSettingsSync() {
+        serviceScope.launch {
+            ServiceLocator.settingsStore.targetApps.collect { apps ->
+                ScrollMonitor.targetPackages = apps
+            }
+        }
     }
 
     /**

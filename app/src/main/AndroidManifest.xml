@@ -12,6 +12,14 @@
     <!-- M1.3 — draw the block screen over other apps. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
+    <!-- M1.4 — see launchable apps so the settings picker can list them (Android 11+ visibility). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
     <application
         android:name=".App"
         android:allowBackup="true"
@@ -29,6 +37,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- M1.4 — budget length + target-app picker. -->
+        <activity
+            android:name=".feature1_doomscroll.ui.SettingsActivity"
+            android:exported="false"
+            android:label="@string/settings_title"
+            android:parentActivityName=".MainActivity" />
 
         <!-- M1.0 — the single AccessibilityService (foreground sensing).
              Guarded by BIND_ACCESSIBILITY_SERVICE so only the system can bind it. -->

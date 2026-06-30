@@ -1,5 +1,6 @@
 package com.contentreg.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
@@ -12,6 +13,7 @@ import com.contentreg.app.core.sensing.ForegroundAppTracker
 import com.contentreg.app.core.sensing.ScrollMonitor
 import com.contentreg.app.databinding.ActivityMainBinding
 import com.contentreg.app.feature1_doomscroll.budget.BudgetMath
+import com.contentreg.app.feature1_doomscroll.ui.SettingsActivity
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -37,6 +39,9 @@ class MainActivity : AppCompatActivity() {
         }
         binding.grantOverlayButton.setOnClickListener {
             PermissionRouter.openOverlaySettings(this)
+        }
+        binding.openSettingsButton.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
 
         // M1.3 test controls: exhaust/reset the budget without scrolling for minutes. With the
