@@ -9,6 +9,9 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- M2.1 — required for the upstream DNS forwarding socket in FilterVpnService. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- M1.3 — draw the block screen over other apps. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
