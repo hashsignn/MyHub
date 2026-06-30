@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">ContentReg</string>
+    <string name="phase0_status">Phase 0 — build pipeline OK.\nReady for Phase 1 (sensing layer).</string>
+</resources>
