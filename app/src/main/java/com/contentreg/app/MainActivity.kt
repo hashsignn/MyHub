@@ -5,11 +5,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.contentreg.app.core.data.di.ServiceLocator
+import com.contentreg.app.core.data.prefs.SettingsStore
 import com.contentreg.app.core.permissions.PermissionRouter
 import com.contentreg.app.core.sensing.ForegroundAppTracker
 import com.contentreg.app.core.sensing.ScrollMonitor
 import com.contentreg.app.databinding.ActivityMainBinding
+import com.contentreg.app.feature1_doomscroll.budget.BudgetMath
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 /**
  * M0.0 — app entry point. M1.0 — also the test harness for foreground sensing:
@@ -54,8 +59,36 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+                launch {
+                    // Combine the live budget state with the configured budget length so the
+                    // readout reflects both accumulation and the (M1.4-editable) allowance.
+                    val tracker = ServiceLocator.timeBudgetTracker
+                    combine(
+                        tracker.state,
+                        ServiceLocator.settingsStore.budgetMinutes,
+                    ) { state, minutes -> state to minutes }
+                        .collect { (state, minutes) ->
+                            val budgetMs = SettingsStore.minutesToMs(minutes)
+                            val used = formatDuration(state.usedMs)
+                            val total = formatDuration(budgetMs)
+                            binding.budgetValueText.text = if (BudgetMath.isExhausted(state, budgetMs)) {
+                                getString(R.string.m12_budget_exhausted, used, total)
+                            } else {
+                                val left = formatDuration(BudgetMath.remainingMs(state, budgetMs))
+                                getString(R.string.m12_budget_value, used, total, left)
+                            }
+                        }
+                }
             }
         }
+    }
+
+    /** Formats a duration in milliseconds as m:ss for the budget readout. */
+    private fun formatDuration(ms: Long): String {
+        val totalSeconds = ms / 1000L
+        val minutes = totalSeconds / 60L
+        val seconds = totalSeconds % 60L
+        return String.format(Locale.US, "%d:%02d", minutes, seconds)
     }
 
     override fun onResume() {

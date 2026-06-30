@@ -3,6 +3,14 @@ package com.contentreg.app.core.sensing
 import android.accessibilityservice.AccessibilityService
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import com.contentreg.app.core.data.di.ServiceLocator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 /**
  * M1.0 — the single AccessibilityService for the whole app.
@@ -10,7 +18,8 @@ import android.view.accessibility.AccessibilityEvent
  * Despite the name (kept to match ARCHITECTURE.md), this is an [AccessibilityService], not an
  * Android foreground `Service`. It is the one sensing layer every feature reads from:
  *  - M1.0: `TYPE_WINDOW_STATE_CHANGED` → which app is in the foreground.
- *  - M1.1: `TYPE_VIEW_SCROLLED` → scroll activity inside target apps (added next).
+ *  - M1.1: `TYPE_VIEW_SCROLLED` → scroll activity inside target apps.
+ *  - M1.2: drives the budget tick loop (the service is the always-alive process while enabled).
  *  - M3.0: walking `getRootInActiveWindow()` → on-screen text (added in Phase 3).
  *
  * It deliberately holds no business logic. It only translates raw accessibility events into the
@@ -19,9 +28,28 @@ import android.view.accessibility.AccessibilityEvent
  */
 class ForegroundService : AccessibilityService() {
 
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         Log.i(TAG, "Accessibility service connected; foreground sensing active.")
+        startBudgetTicker()
+    }
+
+    /**
+     * M1.2 — drive the budget clock once per second while the service is alive. The tracker decides
+     * each tick whether to actually accumulate (target app foreground + recent scroll). State is
+     * loaded from disk first so a restart resumes the same hour's count.
+     */
+    private fun startBudgetTicker() {
+        val tracker = ServiceLocator.timeBudgetTracker
+        serviceScope.launch {
+            tracker.loadInitial()
+            while (isActive) {
+                tracker.tick()
+                delay(TICK_INTERVAL_MS)
+            }
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -54,7 +82,14 @@ class ForegroundService : AccessibilityService() {
         // Required override. Nothing to interrupt — we hold no long-running feedback.
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        // Stop the budget ticker; persisted state already reflects the latest accumulation.
+        serviceScope.cancel()
+    }
+
     companion object {
         private const val TAG = "ForegroundService"
+        private const val TICK_INTERVAL_MS = 1_000L
     }
 }

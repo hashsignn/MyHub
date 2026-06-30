@@ -17,4 +17,9 @@
     <string name="m11_scroll_label">Target-app scrolls counted:</string>
     <string name="m11_scroll_value">%1$d (last: %2$s)</string>
     <string name="m11_scroll_none">0 (scroll a feed app to test)</string>
+
+    <!-- M1.2 — time-budget readout. -->
+    <string name="m12_budget_label">Time budget (this hour):</string>
+    <string name="m12_budget_value">%1$s used / %2$s — %3$s left</string>
+    <string name="m12_budget_exhausted">%1$s used / %2$s — budget exhausted</string>
 </resources>

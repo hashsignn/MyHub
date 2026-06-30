@@ -90,6 +90,29 @@
         app:layout_constraintTop_toBottomOf="@id/scrollLabel"
         tools:text="42 (last: com.instagram.android)" />
 
+    <TextView
+        android:id="@+id/budgetLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="@string/m12_budget_label"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/scrollCountText" />
+
+    <TextView
+        android:id="@+id/budgetValueText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/budgetLabel"
+        tools:text="0:12 used / 5:00 — 4:48 left" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/enableAccessibilityButton"
         android:layout_width="wrap_content"
