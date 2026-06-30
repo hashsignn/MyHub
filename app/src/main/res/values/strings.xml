@@ -1,4 +1,15 @@
 <resources>
     <string name="app_name">ContentReg</string>
     <string name="phase0_status">Phase 0 — build pipeline OK.\nReady for Phase 1 (sensing layer).</string>
+
+    <!-- M1.0 — accessibility service metadata (shown on the system Accessibility screen). -->
+    <string name="accessibility_service_label">ContentReg sensing</string>
+    <string name="accessibility_service_description">Detects which app is in the foreground so ContentReg can track feed usage and (later) block content. Runs entirely on-device — nothing is sent anywhere.</string>
+
+    <!-- M1.0 — main screen UI. -->
+    <string name="m10_enable_accessibility">Enable accessibility access</string>
+    <string name="m10_accessibility_on">Accessibility: ON</string>
+    <string name="m10_accessibility_off">Accessibility: OFF — tap below to enable</string>
+    <string name="m10_foreground_label">Foreground app:</string>
+    <string name="m10_foreground_none">(waiting for a window change…)</string>
 </resources>

@@ -12,7 +12,7 @@ Kept in sync as each milestone lands. Legend: ✅ done · 🚧 in progress · �
 ## Phase 1 — Doomscroll feature
 | Milestone | Status | Notes |
 |---|---|---|
-| M1.0 Foreground app detection | ⬜ | AccessibilityService + config XML + permission routing. |
+| M1.0 Foreground app detection | ✅ | `ForegroundService` (AccessibilityService) + `accessibility_service_config.xml` + `ForegroundAppTracker` (StateFlow) + `PermissionRouter`. MainActivity shows live foreground package + a11y on/off and routes to system settings. Done-when: open Instagram → screen shows `com.instagram.android`. |
 | M1.1 Scroll detection | ⬜ | `TYPE_VIEW_SCROLLED` while a target app is foreground. |
 | M1.2 Combined budget + persistence | ⬜ | Room/DataStore; survives process death. |
 | M1.3 Block overlay | ⬜ | `TYPE_APPLICATION_OVERLAY` via WindowManager. |

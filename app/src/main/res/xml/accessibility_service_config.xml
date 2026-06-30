@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  M1.0 — capabilities/event types for ForegroundService.
+
+  - typeWindowStateChanged: foreground-app detection (M1.0).
+  - typeViewScrolled is added in M1.1 (scroll detection).
+  - canRetrieveWindowContent + flagRetrieveInteractiveWindows are set now (harmless for M1.0)
+    so M3.0's node-tree text reading needs no config change later.
+  - No packageNames filter: we must observe every app to know what is in the foreground.
+  - notificationTimeout throttles event delivery to limit churn on the hot path.
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagRetrieveInteractiveWindows|flagIncludeNotImportantViews"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/accessibility_service_description"
+    android:notificationTimeout="100" />
