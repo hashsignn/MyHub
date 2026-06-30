@@ -6,8 +6,12 @@ import android.view.accessibility.AccessibilityEvent
 import com.contentreg.app.core.data.di.ServiceLocator
 import com.contentreg.app.core.data.prefs.SettingsStore
 import com.contentreg.app.feature1_doomscroll.budget.BudgetMath
+import com.contentreg.app.feature3_text.ScreenTextPipeline
+import com.contentreg.app.feature3_text.ScreenTextReader
+import com.contentreg.app.feature3_text.TextBlockDecider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -35,12 +39,16 @@ class ForegroundService : AccessibilityService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    // M3.0 — debounce handle; cancelled and re-created on each window-state event.
+    private var textReadJob: Job? = null
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         Log.i(TAG, "Accessibility service connected; foreground sensing active.")
         startSettingsSync()
         startBudgetTicker()
         startBlockController()
+        startTextPipeline()  // M3.0
     }
 
     /**
@@ -121,6 +129,36 @@ class ForegroundService : AccessibilityService() {
 
     private data class BlockDecision(val shouldBlock: Boolean, val resetInMs: Long)
 
+    /**
+     * M3.0 — subscribes [TextBlockDecider] to [ScreenTextPipeline] so it can classify each
+     * snapshot and trigger the overlay (M3.2) when confidence is high.
+     */
+    private fun startTextPipeline() {
+        TextBlockDecider(
+            registry = ServiceLocator.registryRepository,
+            overlay = ServiceLocator.overlayManager,
+            scope = serviceScope,
+        ).start()
+    }
+
+    /**
+     * M3.0 — debounced text read. Cancels any pending read before scheduling a new one so rapid
+     * navigation events (SPAs, tab switching) collapse to a single snapshot per settled page.
+     */
+    private fun scheduleTextRead(packageName: String) {
+        textReadJob?.cancel()
+        textReadJob = serviceScope.launch {
+            delay(TEXT_READ_DELAY_MS)
+            val snapshot = withContext(Dispatchers.Main) {
+                ScreenTextReader.read(getRootInActiveWindow(), packageName)
+            }
+            if (snapshot.hasContent) {
+                Log.d(TAG, "M3.0 snapshot: pkg=$packageName url=${snapshot.url} textLen=${snapshot.pageText.length}")
+                ScreenTextPipeline.push(snapshot)
+            }
+        }
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event ?: return
         val packageName = event.packageName?.toString() ?: return
@@ -138,6 +176,8 @@ class ForegroundService : AccessibilityService() {
                     timestampMs = now,
                 )
                 Log.d(TAG, "Foreground app: $packageName")
+                // M3.0 — schedule a debounced text snapshot for classification.
+                scheduleTextRead(packageName)
             }
 
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
@@ -162,5 +202,6 @@ class ForegroundService : AccessibilityService() {
     companion object {
         private const val TAG = "ForegroundService"
         private const val TICK_INTERVAL_MS = 1_000L
+        private const val TEXT_READ_DELAY_MS = 800L  // M3.0 debounce
     }
 }
