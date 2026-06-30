@@ -25,6 +25,9 @@ class RegistryRepositoryTest {
         override suspend fun deleteByKey(key: String) { entries.remove(key) }
         override suspend fun all(): List<BlockedEntry> = entries.values.sortedByDescending { it.createdAtMs }
         override fun count(): Flow<Int> = flowOf(entries.size)
+        override fun blockedDomains(): Flow<List<String>> = flowOf(
+            entries.values.filter { it.type == BlockEntryType.DOMAIN }.map { it.normalizedKey }
+        )
     }
 
     private fun repo() = RegistryRepository(FakeRegistryDao())

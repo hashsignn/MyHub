@@ -23,7 +23,7 @@ class UrlNormalizerTest {
     }
 
     @Test
-    fun `url normalization drops scheme, www, trailing slash, fragment; keeps query`() {
+    fun `url normalization drops scheme, www, trailing slash, fragment and keeps query`() {
         // Scheme dropped (http/https unify), www stripped, trailing slash + fragment removed.
         assertEquals(
             "example.com/page",
