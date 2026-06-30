@@ -7,6 +7,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.contentreg.app.core.permissions.PermissionRouter
 import com.contentreg.app.core.sensing.ForegroundAppTracker
+import com.contentreg.app.core.sensing.ScrollMonitor
 import com.contentreg.app.databinding.ActivityMainBinding
 import kotlinx.coroutines.launch
 
@@ -30,13 +31,28 @@ class MainActivity : AppCompatActivity() {
             PermissionRouter.openAccessibilitySettings(this)
         }
 
-        // Observe the live foreground app while this screen is visible. repeatOnLifecycle ties the
-        // collector to STARTED so it stops when the activity is backgrounded.
+        // Observe the live foreground app + scroll activity while this screen is visible.
+        // repeatOnLifecycle ties the collectors to STARTED so they stop when backgrounded.
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                ForegroundAppTracker.current.collect { app ->
-                    binding.foregroundPackageText.text =
-                        app.packageName ?: getString(R.string.m10_foreground_none)
+                launch {
+                    ForegroundAppTracker.current.collect { app ->
+                        binding.foregroundPackageText.text =
+                            app.packageName ?: getString(R.string.m10_foreground_none)
+                    }
+                }
+                launch {
+                    ScrollMonitor.activity.collect { activity ->
+                        binding.scrollCountText.text = if (activity.totalScrollEvents == 0L) {
+                            getString(R.string.m11_scroll_none)
+                        } else {
+                            getString(
+                                R.string.m11_scroll_value,
+                                activity.totalScrollEvents,
+                                activity.lastScrollPackage,
+                            )
+                        }
+                    }
                 }
             }
         }

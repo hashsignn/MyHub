@@ -12,4 +12,9 @@
     <string name="m10_accessibility_off">Accessibility: OFF — tap below to enable</string>
     <string name="m10_foreground_label">Foreground app:</string>
     <string name="m10_foreground_none">(waiting for a window change…)</string>
+
+    <!-- M1.1 — scroll detection readout. -->
+    <string name="m11_scroll_label">Target-app scrolls counted:</string>
+    <string name="m11_scroll_value">%1$d (last: %2$s)</string>
+    <string name="m11_scroll_none">0 (scroll a feed app to test)</string>
 </resources>

@@ -26,19 +26,28 @@ class ForegroundService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event ?: return
-        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
-
         val packageName = event.packageName?.toString() ?: return
 
-        // Ignore our own UI and transient system windows so we track real foreground apps only.
+        // Ignore our own UI so we never count our own windows/scrolls as activity.
         if (packageName == applicationContext.packageName) return
 
-        ForegroundAppTracker.update(
-            packageName = packageName,
-            className = event.className?.toString(),
-            timestampMs = System.currentTimeMillis(),
-        )
-        Log.d(TAG, "Foreground app: $packageName")
+        val now = System.currentTimeMillis()
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                // M1.0 — foreground-app detection.
+                ForegroundAppTracker.update(
+                    packageName = packageName,
+                    className = event.className?.toString(),
+                    timestampMs = now,
+                )
+                Log.d(TAG, "Foreground app: $packageName")
+            }
+
+            AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
+                // M1.1 — scroll detection. ScrollMonitor drops anything not from a target app.
+                ScrollMonitor.recordScroll(packageName, now)
+            }
+        }
     }
 
     override fun onInterrupt() {
