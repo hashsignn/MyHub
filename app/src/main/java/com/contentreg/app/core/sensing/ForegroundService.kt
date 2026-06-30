@@ -104,8 +104,13 @@ class ForegroundService : AccessibilityService() {
             }.collect { decision ->
                 withContext(Dispatchers.Main) {
                     if (decision.shouldBlock) {
+                        val wasShowing = overlay.isShowing()
                         overlay.show()
                         overlay.updateCountdown(decision.resetInMs)
+                        // Count a block only on the transition from not-showing to showing (M4.2).
+                        if (!wasShowing && overlay.isShowing()) {
+                            launch { ServiceLocator.statsRepository.incrementBlocks() }
+                        }
                     } else {
                         overlay.hide()
                     }

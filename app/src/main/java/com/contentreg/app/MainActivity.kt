@@ -17,7 +17,10 @@ import com.contentreg.app.feature1_doomscroll.budget.BudgetMath
 import com.contentreg.app.feature1_doomscroll.ui.SettingsActivity
 import com.contentreg.app.feature2_url.FilterVpnService
 import com.contentreg.app.feature2_url.registry.BlockEntrySource
+import com.contentreg.app.feature4_retention.onboarding.OnboardingActivity
+import com.contentreg.app.feature4_retention.stats.DashboardActivity
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -52,6 +55,19 @@ class MainActivity : AppCompatActivity() {
         }
         binding.openSettingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
+        }
+        binding.openOnboardingButton.setOnClickListener {
+            startActivity(Intent(this, OnboardingActivity::class.java))
+        }
+        binding.openDashboardButton.setOnClickListener {
+            startActivity(Intent(this, DashboardActivity::class.java))
+        }
+
+        // M4.1 — show onboarding once, on first launch, before the user has completed it.
+        lifecycleScope.launch {
+            if (!ServiceLocator.settingsStore.onboardingComplete.first()) {
+                startActivity(Intent(this@MainActivity, OnboardingActivity::class.java))
+            }
         }
 
         // M1.3 test controls: exhaust/reset the budget without scrolling for minutes. With the

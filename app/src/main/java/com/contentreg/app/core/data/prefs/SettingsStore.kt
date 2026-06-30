@@ -1,8 +1,10 @@
 package com.contentreg.app.core.data.prefs
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.contentreg.app.core.sensing.TargetApps
@@ -48,6 +50,24 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { prefs -> prefs[KEY_BLOCKLIST_SEED_VERSION] = version }
     }
 
+    /** Which launcher disguise is active (M4.0). Stored as the enum name; default DEFAULT. */
+    val appDisguise: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_APP_DISGUISE] ?: "DEFAULT"
+    }
+
+    suspend fun setAppDisguise(name: String) {
+        context.dataStore.edit { prefs -> prefs[KEY_APP_DISGUISE] = name }
+    }
+
+    /** Whether the permission onboarding flow has been completed once (M4.1). */
+    val onboardingComplete: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[KEY_ONBOARDING_COMPLETE] ?: false
+    }
+
+    suspend fun setOnboardingComplete(complete: Boolean) {
+        context.dataStore.edit { prefs -> prefs[KEY_ONBOARDING_COMPLETE] = complete }
+    }
+
     companion object {
         const val DEFAULT_BUDGET_MINUTES = 5
         const val MIN_BUDGET_MINUTES = 1
@@ -55,6 +75,8 @@ class SettingsStore(private val context: Context) {
         private val KEY_BUDGET_MINUTES = intPreferencesKey("budget_minutes")
         private val KEY_TARGET_APPS = stringSetPreferencesKey("target_apps")
         private val KEY_BLOCKLIST_SEED_VERSION = intPreferencesKey("blocklist_seed_version")
+        private val KEY_APP_DISGUISE = stringPreferencesKey("app_disguise")
+        private val KEY_ONBOARDING_COMPLETE = booleanPreferencesKey("onboarding_complete")
 
         /** Convenience: minutes → milliseconds. */
         fun minutesToMs(minutes: Int): Long = minutes.toLong() * 60L * 1000L

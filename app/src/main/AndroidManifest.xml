@@ -29,20 +29,75 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ContentRegApp">
 
+        <!-- M4.0 — MainActivity no longer carries the launcher filter itself; the launcher
+             icon/label is provided by exactly one enabled <activity-alias> below, switchable at
+             runtime by IconAliasController. -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true" />
+
+        <!-- Default disguise (enabled). -->
+        <activity-alias
+            android:name=".Default"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+
+        <!-- Calculator disguise (disabled by default). -->
+        <activity-alias
+            android:name=".AliasCalculator"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_alias_calc"
+            android:label="@string/alias_calculator_label"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Notes disguise (disabled by default). -->
+        <activity-alias
+            android:name=".AliasNotes"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_alias_notes"
+            android:label="@string/alias_notes_label"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <!-- M1.4 — budget length + target-app picker. -->
         <activity
             android:name=".feature1_doomscroll.ui.SettingsActivity"
             android:exported="false"
             android:label="@string/settings_title"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- M4.1 — permission onboarding. -->
+        <activity
+            android:name=".feature4_retention.onboarding.OnboardingActivity"
+            android:exported="false"
+            android:label="@string/onb_heading"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- M4.2 — stats dashboard. -->
+        <activity
+            android:name=".feature4_retention.stats.DashboardActivity"
+            android:exported="false"
+            android:label="@string/dashboard_title"
             android:parentActivityName=".MainActivity" />
 
         <!-- M2.1 — local DNS-filtering VPN (BIND_VPN_SERVICE-guarded; only the system binds it). -->

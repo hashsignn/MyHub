@@ -10,6 +10,7 @@ import com.contentreg.app.feature1_doomscroll.budget.BudgetRepository
 import com.contentreg.app.feature1_doomscroll.budget.BudgetRepositoryRoom
 import com.contentreg.app.feature1_doomscroll.budget.TimeBudgetTracker
 import com.contentreg.app.feature2_url.registry.RegistryRepository
+import com.contentreg.app.feature4_retention.stats.StatsRepository
 
 /**
  * M1.2 — tiny manual dependency container. Both the AccessibilityService and the UI need the same
@@ -37,6 +38,8 @@ object ServiceLocator {
     val budgetRepository: BudgetRepository by lazy { BudgetRepositoryRoom(database.budgetDao()) }
 
     val registryRepository: RegistryRepository by lazy { RegistryRepository(database.registryDao()) }
+
+    val statsRepository: StatsRepository by lazy { StatsRepository(appContext) }
 
     val timeBudgetTracker: TimeBudgetTracker by lazy {
         TimeBudgetTracker(

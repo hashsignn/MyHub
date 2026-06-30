@@ -72,6 +72,20 @@
             android:layout_marginTop="12dp"
             android:text="@string/m14_open_settings" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/openOnboardingButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/m41_open_onboarding" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/openDashboardButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/m42_open_dashboard" />
+
         <!-- Live sensing readouts -->
         <TextView
             android:id="@+id/foregroundLabel"

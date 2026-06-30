@@ -10,6 +10,8 @@ import com.contentreg.app.R
 import com.contentreg.app.core.data.di.ServiceLocator
 import com.contentreg.app.core.data.prefs.SettingsStore
 import com.contentreg.app.databinding.ActivitySettingsBinding
+import com.contentreg.app.feature4_retention.AppDisguise
+import com.contentreg.app.feature4_retention.IconAliasController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -37,7 +39,19 @@ class SettingsActivity : AppCompatActivity() {
         title = getString(R.string.settings_title)
 
         setupBudgetSlider()
+        setupDisguisePicker()
         setupAppList()
+    }
+
+    private fun setupDisguisePicker() {
+        binding.disguiseDefaultButton.setOnClickListener { applyDisguise(AppDisguise.DEFAULT) }
+        binding.disguiseCalcButton.setOnClickListener { applyDisguise(AppDisguise.CALCULATOR) }
+        binding.disguiseNotesButton.setOnClickListener { applyDisguise(AppDisguise.NOTES) }
+    }
+
+    private fun applyDisguise(disguise: AppDisguise) {
+        IconAliasController.apply(this, disguise)
+        lifecycleScope.launch { settings.setAppDisguise(disguise.name) }
     }
 
     private fun setupBudgetSlider() {

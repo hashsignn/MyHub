@@ -40,9 +40,11 @@ Kept in sync as each milestone lands. Legend: ✅ done · 🚧 in progress · �
 ## Phase 4 — Retention & onboarding
 | Milestone | Status | Notes |
 |---|---|---|
-| M4.0 Custom icon + label | ⬜ | `<activity-alias>` runtime switching. |
-| M4.1 Permission onboarding flow | ⬜ | Step-through a11y → overlay → VPN consent. |
-| M4.2 Stats / dashboard | ⬜ | Time saved, blocks, streaks. |
+| M4.0 Custom icon + label | ✅ | 3 `<activity-alias>` launchers (Default / Calculator / Notes, each own icon+label); `IconAliasController` enables exactly one at runtime. MainActivity's own launcher filter removed. Picker in Settings; choice persisted (`SettingsStore.appDisguise`). |
+| M4.1 Permission onboarding flow | ✅ | `OnboardingActivity` + `OnboardingStep` (a11y → overlay → VPN, required vs optional). Live status refresh on resume; Finish enabled when required grants present; auto-shown once on first run (`onboardingComplete`). |
+| M4.2 Stats / dashboard | ✅ | `StatsRepository` (own DataStore): feed blocks triggered (incremented on overlay-show transition) + daily streak (`recordActiveToday`). `DashboardActivity` shows streak, blocks, feed time used this hour, registry size. |
+
+> **Phase 4 complete.** Only Phase 3 (on-screen text + NLP) remains — intentionally last, per plan.
 
 ---
 
