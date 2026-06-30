@@ -2,6 +2,7 @@ package com.contentreg.app.feature2_url
 
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
 import android.net.VpnService
 import android.os.ParcelFileDescriptor
 import android.util.Log
@@ -55,8 +56,34 @@ class FilterVpnService : VpnService() {
         }
     }
 
+    /**
+     * Reads the first DNS server from the active network's link properties *before* the VPN
+     * establishes, so we forward queries to the device's own resolver instead of a hardcoded
+     * external server (which may be unreachable on some networks / emulators).
+     */
+    private fun detectUpstreamDns(): InetAddress {
+        return try {
+            val cm = getSystemService(ConnectivityManager::class.java)
+            val lp = cm.getLinkProperties(cm.activeNetwork)
+            val server = lp?.dnsServers?.firstOrNull()
+            if (server != null) {
+                Log.i(TAG, "Upstream DNS detected: $server")
+                server
+            } else {
+                Log.w(TAG, "No DNS detected in link properties, falling back to $UPSTREAM_DNS")
+                InetAddress.getByName(UPSTREAM_DNS)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "DNS detection failed, falling back to $UPSTREAM_DNS: ${e.message}")
+            InetAddress.getByName(UPSTREAM_DNS)
+        }
+    }
+
     private fun startVpn() {
         if (tunInterface != null) return
+
+        // Detect the underlying network's DNS before establish() changes the active network.
+        val upstreamDns = detectUpstreamDns()
 
         // Keep the in-memory blocklist snapshot in sync with the registry.
         scope.launch {
@@ -85,7 +112,7 @@ class FilterVpnService : VpnService() {
             tunOutput = FileOutputStream(pfd.fileDescriptor),
             protect = { socket -> protect(socket) },
             isHostBlocked = ::decideBlock,
-            upstreamDns = InetAddress.getByName(UPSTREAM_DNS),
+            upstreamDns = upstreamDns,
         )
         loop = tunLoop
         worker = Thread(tunLoop::run, "dns-filter-loop").apply { start() }

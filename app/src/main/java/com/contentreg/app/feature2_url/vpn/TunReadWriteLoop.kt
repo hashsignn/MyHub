@@ -61,9 +61,12 @@ class TunReadWriteLoop(
         }
     }
 
-    private fun forwardUpstream(dns: ByteArray): ByteArray? = runCatching {
+    private fun forwardUpstream(dns: ByteArray): ByteArray? = try {
         DatagramSocket().use { socket ->
-            if (!protect(socket)) return null // must bypass our own VPN
+            if (!protect(socket)) {
+                Log.w(TAG, "protect() returned false — upstream query dropped")
+                return null
+            }
             socket.soTimeout = UPSTREAM_TIMEOUT_MS
             socket.send(DatagramPacket(dns, dns.size, upstreamDns, DNS_PORT))
             val buf = ByteArray(MAX_PACKET)
@@ -71,7 +74,10 @@ class TunReadWriteLoop(
             socket.receive(reply)
             buf.copyOf(reply.length)
         }
-    }.getOrNull()
+    } catch (e: Exception) {
+        Log.w(TAG, "forwardUpstream to $upstreamDns failed: ${e.javaClass.simpleName}: ${e.message}")
+        null
+    }
 
     companion object {
         private const val TAG = "TunReadWriteLoop"
