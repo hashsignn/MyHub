@@ -43,4 +43,12 @@
     <string name="settings_budget_value">%1$d min / hour</string>
     <string name="settings_apps_heading">Apps that count</string>
     <string name="settings_apps_subtitle">Scrolling in these apps draws down the budget.</string>
+
+    <!-- M2.1 — URL filter (VPN) controls. -->
+    <string name="m21_section">URL filter (Phase 2)</string>
+    <string name="m21_start_vpn">Start URL filter (VPN)</string>
+    <string name="m21_stop_vpn">Stop URL filter (VPN)</string>
+    <string name="m21_block_domain_hint">domain to block (e.g. example.com)</string>
+    <string name="m21_block_domain">Block domain</string>
+    <string name="m21_registry_count">Blocked entries in registry: %1$d</string>
 </resources>

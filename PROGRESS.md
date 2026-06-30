@@ -24,7 +24,7 @@ Kept in sync as each milestone lands. Legend: ✅ done · 🚧 in progress · �
 | Milestone | Status | Notes |
 |---|---|---|
 | M2.0 Choose mechanism | ✅ | **Hybrid** chosen (domain via VpnService + path via a11y address-bar later). Written up with limits in `docs/decisions/0001-url-blocking-mechanism.md`. |
-| M2.1 Local VPN skeleton | ⬜ | `VpnService`; DNS/hostname allow-deny. Built next. |
+| M2.1 Local VPN skeleton | ✅ (skeleton) | No-root **DNS-filtering** `FilterVpnService`: routes only a virtual DNS IP through the TUN, parses each query, returns NXDOMAIN for registry domains (subdomain-aware) or forwards upstream (1.1.1.1) via a `protect()`-ed socket. `DnsPacketHandler` (IPv4/UDP/DNS parse + checksums), `TunReadWriteLoop`, consent via `PermissionRouter.prepareVpn`. MainActivity: VPN toggle + "block domain" test field + registry count. Tests: `DnsPacketHandlerTest`. **Packet framing needs on-device validation; TCP/IP, IPv6, DoH out of scope (see ADR 0001).** Done-when: a blocked domain fails to resolve while the VPN is active. |
 | M2.2 Registry store | ✅ | Room v2 (`blocked_entries`, migration 1→2, enum converters) + `RegistryDao` (indexed EXISTS lookup) + `RegistryRepository` (`isHostBlocked`/`isUrlBlocked` with domain-covers-URL fallback) + pure `UrlNormalizer` (scheme-dropping so http/https unify). Built **before** M2.1 since both the VPN filter and classifier consult it. Tests: `UrlNormalizerTest`, `RegistryRepositoryTest`. Done-when: a registered entry blocks instantly without re-classifying. |
 | M2.3 Classifier | ⬜ | Blocklists + heuristics first. |
 

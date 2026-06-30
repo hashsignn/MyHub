@@ -45,6 +45,16 @@
             android:label="@string/settings_title"
             android:parentActivityName=".MainActivity" />
 
+        <!-- M2.1 — local DNS-filtering VPN (BIND_VPN_SERVICE-guarded; only the system binds it). -->
+        <service
+            android:name=".feature2_url.FilterVpnService"
+            android:exported="false"
+            android:permission="android.permission.BIND_VPN_SERVICE">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>
+
         <!-- M1.0 — the single AccessibilityService (foreground sensing).
              Guarded by BIND_ACCESSIBILITY_SERVICE so only the system can bind it. -->
         <service

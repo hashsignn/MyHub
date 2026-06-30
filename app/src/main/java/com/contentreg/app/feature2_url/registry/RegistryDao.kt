@@ -30,4 +30,8 @@ interface RegistryDao {
 
     @Query("SELECT COUNT(*) FROM blocked_entries")
     fun count(): Flow<Int>
+
+    /** Normalized keys of DOMAIN-type entries, observed so the VPN refreshes its snapshot live. */
+    @Query("SELECT normalizedKey FROM blocked_entries WHERE type = 'DOMAIN'")
+    fun blockedDomains(): Flow<List<String>>
 }

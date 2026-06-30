@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.net.VpnService
 import android.provider.Settings
 import android.text.TextUtils
 import com.contentreg.app.core.sensing.ForegroundService
@@ -60,4 +61,10 @@ object PermissionRouter {
         }
         context.startActivity(intent)
     }
+
+    /**
+     * M2.1 — returns the VPN consent intent to launch, or null if consent was already granted.
+     * The caller starts the returned intent for result; on OK it may start [FilterVpnService].
+     */
+    fun prepareVpn(context: Context): Intent? = VpnService.prepare(context)
 }

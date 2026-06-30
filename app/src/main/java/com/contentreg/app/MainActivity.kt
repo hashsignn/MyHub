@@ -2,6 +2,7 @@ package com.contentreg.app
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -14,6 +15,8 @@ import com.contentreg.app.core.sensing.ScrollMonitor
 import com.contentreg.app.databinding.ActivityMainBinding
 import com.contentreg.app.feature1_doomscroll.budget.BudgetMath
 import com.contentreg.app.feature1_doomscroll.ui.SettingsActivity
+import com.contentreg.app.feature2_url.FilterVpnService
+import com.contentreg.app.feature2_url.registry.BlockEntrySource
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -27,6 +30,13 @@ import java.util.Locale
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+
+    /** M2.1 — launches the system VPN consent dialog; on approval, starts the filter service. */
+    private val vpnConsentLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) FilterVpnService.start(this)
+            refreshVpnButton()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +64,27 @@ class MainActivity : AppCompatActivity() {
         binding.testResetButton.setOnClickListener {
             lifecycleScope.launch {
                 ServiceLocator.timeBudgetTracker.debugSetUsedMs(0L)
+            }
+        }
+
+        // M2.1 — URL filter VPN toggle + a quick "block this domain" control for testing.
+        binding.vpnToggleButton.setOnClickListener {
+            if (FilterVpnService.isRunning) {
+                FilterVpnService.stop(this)
+                refreshVpnButton()
+            } else {
+                val consent = PermissionRouter.prepareVpn(this)
+                if (consent != null) vpnConsentLauncher.launch(consent) else FilterVpnService.start(this)
+                refreshVpnButton()
+            }
+        }
+        binding.blockDomainButton.setOnClickListener {
+            val domain = binding.blockDomainEdit.text?.toString()?.trim().orEmpty()
+            if (domain.isNotEmpty()) {
+                lifecycleScope.launch {
+                    ServiceLocator.registryRepository.addDomain(domain, BlockEntrySource.MANUAL)
+                }
+                binding.blockDomainEdit.text?.clear()
             }
         }
 
@@ -100,8 +131,19 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                 }
+                launch {
+                    ServiceLocator.registryRepository.count.collect { n ->
+                        binding.registryCountText.text = getString(R.string.m21_registry_count, n)
+                    }
+                }
             }
         }
+    }
+
+    private fun refreshVpnButton() {
+        binding.vpnToggleButton.setText(
+            if (FilterVpnService.isRunning) R.string.m21_stop_vpn else R.string.m21_start_vpn,
+        )
     }
 
     /** Formats a duration in milliseconds as m:ss for the budget readout. */
@@ -116,6 +158,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // Re-check on resume: the user may have toggled the service in system settings and returned.
         refreshAccessibilityState()
+        refreshVpnButton()
     }
 
     private fun refreshAccessibilityState() {

@@ -1,6 +1,7 @@
 package com.contentreg.app.feature2_url.registry
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
  * M2.2 — the local registry of blocked entries, checked first on each request so known-bad entries
@@ -14,6 +15,9 @@ import kotlinx.coroutines.flow.Flow
 class RegistryRepository(private val dao: RegistryDao) {
 
     val count: Flow<Int> = dao.count()
+
+    /** Live set of normalized blocked domains, for the VPN's in-memory snapshot (M2.1). */
+    val blockedDomains: Flow<Set<String>> = dao.blockedDomains().map { it.toSet() }
 
     /** True if the (normalized) host is registered as a blocked domain. */
     suspend fun isHostBlocked(host: String): Boolean {
