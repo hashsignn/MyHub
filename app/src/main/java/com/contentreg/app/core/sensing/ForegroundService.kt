@@ -4,13 +4,18 @@ import android.accessibilityservice.AccessibilityService
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.contentreg.app.core.data.di.ServiceLocator
+import com.contentreg.app.core.data.prefs.SettingsStore
+import com.contentreg.app.feature1_doomscroll.budget.BudgetMath
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * M1.0 — the single AccessibilityService for the whole app.
@@ -34,6 +39,7 @@ class ForegroundService : AccessibilityService() {
         super.onServiceConnected()
         Log.i(TAG, "Accessibility service connected; foreground sensing active.")
         startBudgetTicker()
+        startBlockController()
     }
 
     /**
@@ -51,6 +57,51 @@ class ForegroundService : AccessibilityService() {
             }
         }
     }
+
+    /**
+     * M1.3 — shows the block overlay when the budget is exhausted AND a target feed app is
+     * foreground; hides it otherwise. Because the trigger includes "foreground is a target app",
+     * pressing Home or switching away auto-dismisses the block — it covers the feed, never the
+     * whole phone. A 1-second ticker keeps the "resets in" countdown live even while idle.
+     */
+    private fun startBlockController() {
+        val tracker = ServiceLocator.timeBudgetTracker
+        val settings = ServiceLocator.settingsStore
+        val overlay = ServiceLocator.overlayManager
+        val ticker = flow {
+            while (true) {
+                emit(Unit)
+                delay(TICK_INTERVAL_MS)
+            }
+        }
+
+        serviceScope.launch {
+            combine(
+                tracker.state,
+                settings.budgetMinutes,
+                ForegroundAppTracker.current,
+                ticker,
+            ) { state, minutes, foreground, _ ->
+                val budgetMs = SettingsStore.minutesToMs(minutes)
+                val exhausted = BudgetMath.isExhausted(state, budgetMs)
+                val pkg = foreground.packageName
+                val onTarget = pkg != null && pkg in ScrollMonitor.targetPackages
+                val resetInMs = state.windowStartMs + BudgetMath.HOUR_MS - System.currentTimeMillis()
+                BlockDecision(shouldBlock = exhausted && onTarget, resetInMs = resetInMs)
+            }.collect { decision ->
+                withContext(Dispatchers.Main) {
+                    if (decision.shouldBlock) {
+                        overlay.show()
+                        overlay.updateCountdown(decision.resetInMs)
+                    } else {
+                        overlay.hide()
+                    }
+                }
+            }
+        }
+    }
+
+    private data class BlockDecision(val shouldBlock: Boolean, val resetInMs: Long)
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event ?: return
@@ -84,8 +135,10 @@ class ForegroundService : AccessibilityService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        // Stop the budget ticker; persisted state already reflects the latest accumulation.
+        // Stop the tickers and tear down any visible block: with the service gone there is nothing
+        // left to keep it in sync. (onDestroy is delivered on the main thread.)
         serviceScope.cancel()
+        ServiceLocator.overlayManager.hide()
     }
 
     companion object {

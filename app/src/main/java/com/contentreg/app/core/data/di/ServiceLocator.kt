@@ -3,6 +3,7 @@ package com.contentreg.app.core.data.di
 import android.content.Context
 import com.contentreg.app.core.data.AppDatabase
 import com.contentreg.app.core.data.prefs.SettingsStore
+import com.contentreg.app.core.overlay.OverlayManager
 import com.contentreg.app.core.sensing.ForegroundAppTracker
 import com.contentreg.app.core.sensing.ScrollMonitor
 import com.contentreg.app.feature1_doomscroll.budget.BudgetRepository
@@ -29,6 +30,8 @@ object ServiceLocator {
     val database: AppDatabase by lazy { AppDatabase.build(appContext) }
 
     val settingsStore: SettingsStore by lazy { SettingsStore(appContext) }
+
+    val overlayManager: OverlayManager by lazy { OverlayManager(appContext) }
 
     val budgetRepository: BudgetRepository by lazy { BudgetRepositoryRoom(database.budgetDao()) }
 

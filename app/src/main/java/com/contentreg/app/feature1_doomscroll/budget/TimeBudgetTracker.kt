@@ -66,4 +66,18 @@ class TimeBudgetTracker(
     fun remainingMs(budgetMs: Long): Long = BudgetMath.remainingMs(_state.value, budgetMs)
 
     fun isExhausted(budgetMs: Long): Boolean = BudgetMath.isExhausted(_state.value, budgetMs)
+
+    /**
+     * Test/dev helper — sets the used time directly (within the current window) and persists it, so
+     * the block overlay (M1.3) can be exercised without scrolling a feed for minutes. Wired only to
+     * the on-screen "Test" buttons; no production code path calls this.
+     */
+    suspend fun debugSetUsedMs(usedMs: Long) {
+        val now = clock()
+        val window = BudgetMath.windowStartFor(now)
+        val updated = BudgetState(usedMs = usedMs.coerceAtLeast(0L), windowStartMs = window)
+        _state.value = updated
+        repository.save(updated)
+        lastTickMs = now
+    }
 }

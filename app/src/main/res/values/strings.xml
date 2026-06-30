@@ -22,4 +22,17 @@
     <string name="m12_budget_label">Time budget (this hour):</string>
     <string name="m12_budget_value">%1$s used / %2$s — %3$s left</string>
     <string name="m12_budget_exhausted">%1$s used / %2$s — budget exhausted</string>
+
+    <!-- M1.3 — overlay permission + block-overlay test controls. -->
+    <string name="m13_grant_overlay">Grant \"draw over other apps\"</string>
+    <string name="m13_overlay_on">Overlay permission: ON</string>
+    <string name="m13_overlay_off">Overlay permission: OFF — needed to block</string>
+    <string name="m13_test_exhaust">Test: exhaust budget</string>
+    <string name="m13_test_reset">Test: reset budget</string>
+
+    <!-- M1.3 — block overlay content. -->
+    <string name="overlay_block_title">Time\'s up</string>
+    <string name="overlay_block_subtitle">You\'ve reached your feed time budget for this hour.</string>
+    <string name="overlay_block_reset">Resets in %1$s</string>
+    <string name="overlay_block_hint">Leave this app to keep using your phone.</string>
 </resources>

@@ -35,6 +35,22 @@ class MainActivity : AppCompatActivity() {
         binding.enableAccessibilityButton.setOnClickListener {
             PermissionRouter.openAccessibilitySettings(this)
         }
+        binding.grantOverlayButton.setOnClickListener {
+            PermissionRouter.openOverlaySettings(this)
+        }
+
+        // M1.3 test controls: exhaust/reset the budget without scrolling for minutes. With the
+        // budget exhausted, opening a feed app shows the block overlay.
+        binding.testExhaustButton.setOnClickListener {
+            lifecycleScope.launch {
+                ServiceLocator.timeBudgetTracker.debugSetUsedMs(DEBUG_EXHAUST_MS)
+            }
+        }
+        binding.testResetButton.setOnClickListener {
+            lifecycleScope.launch {
+                ServiceLocator.timeBudgetTracker.debugSetUsedMs(0L)
+            }
+        }
 
         // Observe the live foreground app + scroll activity while this screen is visible.
         // repeatOnLifecycle ties the collectors to STARTED so they stop when backgrounded.
@@ -98,10 +114,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshAccessibilityState() {
-        val enabled = PermissionRouter.isAccessibilityServiceEnabled(this)
+        val a11yEnabled = PermissionRouter.isAccessibilityServiceEnabled(this)
         binding.accessibilityStateText.text = getString(
-            if (enabled) R.string.m10_accessibility_on else R.string.m10_accessibility_off,
+            if (a11yEnabled) R.string.m10_accessibility_on else R.string.m10_accessibility_off,
         )
-        binding.enableAccessibilityButton.isEnabled = !enabled
+        binding.enableAccessibilityButton.isEnabled = !a11yEnabled
+
+        val canOverlay = PermissionRouter.canDrawOverlays(this)
+        binding.overlayStateText.text = getString(
+            if (canOverlay) R.string.m13_overlay_on else R.string.m13_overlay_off,
+        )
+        binding.grantOverlayButton.isEnabled = !canOverlay
+    }
+
+    companion object {
+        // Large enough to exhaust any sane budget within the current hour window.
+        private const val DEBUG_EXHAUST_MS = 24L * 60L * 60L * 1000L
     }
 }
+

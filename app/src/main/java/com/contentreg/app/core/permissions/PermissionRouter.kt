@@ -3,6 +3,7 @@ package com.contentreg.app.core.permissions
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.provider.Settings
 import android.text.TextUtils
 import com.contentreg.app.core.sensing.ForegroundService
@@ -44,5 +45,19 @@ object PermissionRouter {
             if (component.equals(expected, ignoreCase = true)) return true
         }
         return false
+    }
+
+    /** M1.3 — true when the user has granted "draw over other apps" (overlay) permission. */
+    fun canDrawOverlays(context: Context): Boolean = Settings.canDrawOverlays(context)
+
+    /** Opens the system "Display over other apps" screen for this app (M1.3). */
+    fun openOverlaySettings(context: Context) {
+        val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            Uri.parse("package:${context.packageName}"),
+        ).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
     }
 }
