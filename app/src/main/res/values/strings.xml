@@ -1,4 +1,84 @@
 <resources>
     <string name="app_name">ContentReg</string>
     <string name="phase0_status">Phase 0 — build pipeline OK.\nReady for Phase 1 (sensing layer).</string>
+
+    <!-- M1.0 — accessibility service metadata (shown on the system Accessibility screen). -->
+    <string name="accessibility_service_label">ContentReg sensing</string>
+    <string name="accessibility_service_description">Detects which app is in the foreground so ContentReg can track feed usage and (later) block content. Runs entirely on-device — nothing is sent anywhere.</string>
+
+    <!-- M1.0 — main screen UI. -->
+    <string name="m10_enable_accessibility">Enable accessibility access</string>
+    <string name="m10_accessibility_on">Accessibility: ON</string>
+    <string name="m10_accessibility_off">Accessibility: OFF — tap below to enable</string>
+    <string name="m10_foreground_label">Foreground app:</string>
+    <string name="m10_foreground_none">(waiting for a window change…)</string>
+
+    <!-- M1.1 — scroll detection readout. -->
+    <string name="m11_scroll_label">Target-app scrolls counted:</string>
+    <string name="m11_scroll_value">%1$d (last: %2$s)</string>
+    <string name="m11_scroll_none">0 (scroll a feed app to test)</string>
+
+    <!-- M1.2 — time-budget readout. -->
+    <string name="m12_budget_label">Time budget (this hour):</string>
+    <string name="m12_budget_value">%1$s used / %2$s — %3$s left</string>
+    <string name="m12_budget_exhausted">%1$s used / %2$s — budget exhausted</string>
+
+    <!-- M1.3 — overlay permission + block-overlay test controls. -->
+    <string name="m13_grant_overlay">Grant \"draw over other apps\"</string>
+    <string name="m13_overlay_on">Overlay permission: ON</string>
+    <string name="m13_overlay_off">Overlay permission: OFF — needed to block</string>
+    <string name="m13_test_exhaust">Test: exhaust budget</string>
+    <string name="m13_test_reset">Test: reset budget</string>
+
+    <!-- M1.3 — block overlay content. -->
+    <string name="overlay_block_title">Time\'s up</string>
+    <string name="overlay_block_subtitle">You\'ve reached your feed time budget for this hour.</string>
+    <string name="overlay_block_reset">Resets in %1$s</string>
+    <string name="overlay_block_hint">Leave this app to keep using your phone.</string>
+
+    <!-- M1.4 — settings screen. -->
+    <string name="settings_title">Settings</string>
+    <string name="m14_open_settings">Settings (budget &amp; apps)</string>
+    <string name="settings_budget_heading">Per-hour budget</string>
+    <string name="settings_budget_value">%1$d min / hour</string>
+    <string name="settings_apps_heading">Apps that count</string>
+    <string name="settings_apps_subtitle">Scrolling in these apps draws down the budget.</string>
+
+    <!-- M2.1 — URL filter (VPN) controls. -->
+    <string name="m21_section">URL filter (Phase 2)</string>
+    <string name="m21_start_vpn">Start URL filter (VPN)</string>
+    <string name="m21_stop_vpn">Stop URL filter (VPN)</string>
+    <string name="m21_block_domain_hint">domain to block (e.g. example.com)</string>
+    <string name="m21_block_domain">Block domain</string>
+    <string name="m21_registry_count">Blocked entries in registry: %1$d</string>
+
+    <!-- M4.0 — disguise aliases. -->
+    <string name="alias_calculator_label">Calculator</string>
+    <string name="alias_notes_label">Notes</string>
+    <string name="settings_disguise_heading">App disguise (icon &amp; name)</string>
+    <string name="disguise_default">Default (ContentReg)</string>
+    <string name="disguise_calculator">Calculator</string>
+    <string name="disguise_notes">Notes</string>
+
+    <!-- M4.1 — onboarding. -->
+    <string name="onb_heading">Set up ContentReg</string>
+    <string name="onb_subtitle">Grant these so the app can sense, block, and filter. You can change them anytime in system settings.</string>
+    <string name="onb_a11y_title">Accessibility access</string>
+    <string name="onb_a11y_desc">Detects the foreground app and scrolling (and reads on-screen text later).</string>
+    <string name="onb_overlay_title">Display over other apps</string>
+    <string name="onb_overlay_desc">Draws the block screen over a feed when your time budget runs out.</string>
+    <string name="onb_vpn_title">URL filter (VPN) — optional</string>
+    <string name="onb_vpn_desc">Blocks explicit domains on-device. No traffic leaves your phone.</string>
+    <string name="onb_granted">Granted ✓</string>
+    <string name="onb_not_granted">Not granted</string>
+    <string name="onb_finish">Continue to app</string>
+    <string name="m41_open_onboarding">Run setup / permissions</string>
+
+    <!-- M4.2 — dashboard. -->
+    <string name="m42_open_dashboard">Stats dashboard</string>
+    <string name="dashboard_title">Your stats</string>
+    <string name="dashboard_blocks">Feed blocks triggered: %1$d</string>
+    <string name="dashboard_streak">Daily streak: %1$d days</string>
+    <string name="dashboard_registry">Sites in block registry: %1$d</string>
+    <string name="dashboard_usage">Feed time used this hour: %1$s</string>
 </resources>

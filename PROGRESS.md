@@ -12,33 +12,41 @@ Kept in sync as each milestone lands. Legend: ✅ done · 🚧 in progress · �
 ## Phase 1 — Doomscroll feature
 | Milestone | Status | Notes |
 |---|---|---|
-| M1.0 Foreground app detection | ⬜ | AccessibilityService + config XML + permission routing. |
-| M1.1 Scroll detection | ⬜ | `TYPE_VIEW_SCROLLED` while a target app is foreground. |
-| M1.2 Combined budget + persistence | ⬜ | Room/DataStore; survives process death. |
-| M1.3 Block overlay | ⬜ | `TYPE_APPLICATION_OVERLAY` via WindowManager. |
-| M1.4 Reset logic + settings | ⬜ | Hour-boundary reset; app multi-select + minutes slider. |
+| M1.0 Foreground app detection | ✅ | `ForegroundService` (AccessibilityService) + `accessibility_service_config.xml` + `ForegroundAppTracker` (StateFlow) + `PermissionRouter`. MainActivity shows live foreground package + a11y on/off and routes to system settings. Done-when: open Instagram → screen shows `com.instagram.android`. |
+| M1.1 Scroll detection | ✅ | `ScrollMonitor` counts `TYPE_VIEW_SCROLLED` events from `TargetApps.DEFAULT` (feed apps) only; exposes a StateFlow + `isRecentlyScrolling()` for M1.2's timer. `ForegroundService` routes scroll events; config adds `typeViewScrolled`. MainActivity shows a live scroll counter. Done-when: scrolling a feed app increments the count; scrolling elsewhere doesn't. |
+| M1.2 Combined budget + persistence | ✅ | Pure `BudgetMath` + `BudgetState` (JVM-testable) → Room (`AppDatabase`/`BudgetStateEntity`/`BudgetDao`/`BudgetRepositoryRoom`) + DataStore (`SettingsStore`, budget minutes) → `TimeBudgetTracker` (1s tick in `ForegroundService`, accumulates only while target-app foreground + recently scrolling, persists on change) → wired via `App` + `ServiceLocator`. MainActivity shows used/total/left. Unit tests: `BudgetMathTest`, `TimeBudgetTrackerTest` (incl. process-death restore). Note: added `BudgetMath`/entity/DAO/`BudgetRepository` interface beyond the original ARCHITECTURE list for testability + clean persistence boundary. Done-when: Instagram→TikTok draw down one budget; kill+reopen preserves the count. |
+| M1.3 Block overlay | ✅ | `OverlayManager` (adds/removes `TYPE_APPLICATION_OVERLAY` full-screen, touch-blocking) + `BlockOverlayView` (`overlay_block.xml`, live "resets in mm:ss"). Block controller in `ForegroundService` combines budget+foreground+1s ticker → shows only when **exhausted AND a target app is foreground** (Home/switch-away auto-hides; never traps the phone). `PermissionRouter` adds overlay grant/route; MainActivity shows overlay perm + Test exhaust/reset buttons (`debugSetUsedMs`). Done-when: exhausting the budget covers the feed app. |
+| M1.4 Reset logic + settings | ✅ | Timestamp reset already live in `BudgetMath`; `HourWindowResetter` + `ResetWorker` (WorkManager, hourly) are the backup when the service is dead. `SettingsActivity` = minutes slider (1–60) + installed-app multi-select (`AppListAdapter`, `<queries>` for visibility), persisted to `SettingsStore` (`budgetMinutes`, `targetApps`). `ForegroundService` syncs `ScrollMonitor.targetPackages` from settings live. MainActivity has a Settings button. Done-when: budget resets each hour; settings changes take effect immediately. |
+
+> **Phase 1 complete — first shippable prototype.** Sensing (M1.0/M1.1) → budget+persistence (M1.2) → block overlay (M1.3) → reset+settings (M1.4). Everything below is additive.
 
 ## Phase 2 — URL registry + blocking
 | Milestone | Status | Notes |
 |---|---|---|
-| M2.0 Choose mechanism | ⬜ | Domain (VPN) / path (a11y address-bar) / hybrid — decision. |
-| M2.1 Local VPN skeleton | ⬜ | `VpnService`; DNS/hostname allow-deny. |
-| M2.2 Registry store | ⬜ | Room table; lookup-before-classify. |
-| M2.3 Classifier | ⬜ | Blocklists + heuristics first. |
+| M2.0 Choose mechanism | ✅ | **Hybrid** chosen (domain via VpnService + path via a11y address-bar later). Written up with limits in `docs/decisions/0001-url-blocking-mechanism.md`. |
+| M2.1 Local VPN skeleton | ✅ (skeleton) | No-root **DNS-filtering** `FilterVpnService`: routes only a virtual DNS IP through the TUN, parses each query, returns NXDOMAIN for registry domains (subdomain-aware) or forwards upstream (1.1.1.1) via a `protect()`-ed socket. `DnsPacketHandler` (IPv4/UDP/DNS parse + checksums), `TunReadWriteLoop`, consent via `PermissionRouter.prepareVpn`. MainActivity: VPN toggle + "block domain" test field + registry count. Tests: `DnsPacketHandlerTest`. **Packet framing needs on-device validation; TCP/IP, IPv6, DoH out of scope (see ADR 0001).** Done-when: a blocked domain fails to resolve while the VPN is active. |
+| M2.2 Registry store | ✅ | Room v2 (`blocked_entries`, migration 1→2, enum converters) + `RegistryDao` (indexed EXISTS lookup) + `RegistryRepository` (`isHostBlocked`/`isUrlBlocked` with domain-covers-URL fallback) + pure `UrlNormalizer` (scheme-dropping so http/https unify). Built **before** M2.1 since both the VPN filter and classifier consult it. Tests: `UrlNormalizerTest`, `RegistryRepositoryTest`. Done-when: a registered entry blocks instantly without re-classifying. |
+| M2.3 Classifier | ✅ | Curated **102-domain explicit blocklist** (`res/raw/explicit_blocklist.txt`) seeded into the registry on first run (`BlocklistSeeder`, versioned + idempotent). `UrlClassifier` = curated list + conservative whole-label keyword heuristics (no NLP). VPN consults registry first, else classifies unseen hosts and persists blocks. MainActivity "block domain" field for manual adds. Tests: `UrlClassifierTest`. Done-when: a bad domain is classified + written to the registry; benign ones aren't. |
+
+> **Phase 2 complete.** Mechanism decided (M2.0), registry (M2.2), DNS-filter VPN skeleton (M2.1, needs device validation), curated blocklist + classifier (M2.3). NLP-based context classification is intentionally deferred to **Phase 3, which we'll do last (after Phase 4)**.
 
 ## Phase 3 — On-screen text + context blocking
 | Milestone | Status | Notes |
 |---|---|---|
-| M3.0 Read on-screen text | ⬜ | Node-tree walk; reuses Phase 1 service. |
-| M3.1 Context-aware classification | ⬜ | Rules first; small model later. |
-| M3.2 Trigger block on high confidence | ⬜ | Reuses M1.3 overlay. |
+| M3.0 Read on-screen text | ✅ | `ScreenTextReader` walks `getRootInActiveWindow()` into a pure `NodeInfo` tree (max 200 nodes, depth 15, 5 000 chars). Extracts URL from known browser address-bar view IDs (Chrome, Firefox, Samsung, Edge, Brave, Opera, Kiwi, Vivaldi) with heuristic fallback. `ScreenSnapshot` (packageName, url, pageText) carried by `ScreenTextPipeline` (SharedFlow/DROP_OLDEST). `ForegroundService` debounces text reads 800 ms on `TYPE_WINDOW_STATE_CHANGED`. Reuses Phase 1 AccessibilityService — no second service. Unit tests: 10. Device verified: snapshots logged in Chrome. |
+| M3.1 Context-aware classification | ✅ | `KeywordContextRules`: 3 keyword tiers (EXPLICIT 0.90, MODERATE 0.65, CONTEXT 0.45), prefix-match support, ±12-token context window. Safe-context words (medical/recovery/crime/art/academic) discount −0.25/hit capped −0.60; amplifiers add +0.08/hit capped +0.20. Block threshold 0.80. `ContextClassifier` wraps rules with a `ModelClassifier` stub seam ([0.40, 0.80) band deferred to LiteRT/ONNX). Unit tests: 30+. Device verified: detected 'porn' on nofap.com at conf=0.30 (safe-context recovery words correctly discounted from 0.90 — no false block). |
+| M3.2 Trigger block on high confidence | ✅ | `TextBlockDecider` subscribes to pipeline: registry fast-path (URL already blocked → overlay immediately); classifier slow-path (conf ≥ 0.80 → overlay + persist). URL-level persist when path present (reddit.com/r/nsfw blocked, reddit.com stays open); domain-level for bare hosts. Reuses `OverlayManager` from M1.3 — no second overlay. Source = `HEURISTIC`. |
+
+> **Phase 3 complete.** All 80 unit tests pass. Pipeline: M3.0 reads screen → M3.1 classifies with context awareness → M3.2 reuses M1.3 overlay and writes URL-level registry entries. `ModelClassifier` stub seam ready for LiteRT/ONNX when needed.
 
 ## Phase 4 — Retention & onboarding
 | Milestone | Status | Notes |
 |---|---|---|
-| M4.0 Custom icon + label | ⬜ | `<activity-alias>` runtime switching. |
-| M4.1 Permission onboarding flow | ⬜ | Step-through a11y → overlay → VPN consent. |
-| M4.2 Stats / dashboard | ⬜ | Time saved, blocks, streaks. |
+| M4.0 Custom icon + label | ✅ | 3 `<activity-alias>` launchers (Default / Calculator / Notes, each own icon+label); `IconAliasController` enables exactly one at runtime. MainActivity's own launcher filter removed. Picker in Settings; choice persisted (`SettingsStore.appDisguise`). |
+| M4.1 Permission onboarding flow | ✅ | `OnboardingActivity` + `OnboardingStep` (a11y → overlay → VPN, required vs optional). Live status refresh on resume; Finish enabled when required grants present; auto-shown once on first run (`onboardingComplete`). |
+| M4.2 Stats / dashboard | ✅ | `StatsRepository` (own DataStore): feed blocks triggered (incremented on overlay-show transition) + daily streak (`recordActiveToday`). `DashboardActivity` shows streak, blocks, feed time used this hour, registry size. |
+
+> **Phase 4 complete.** Only Phase 3 (on-screen text + NLP) remains — intentionally last, per plan.
 
 ---
 
