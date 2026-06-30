@@ -23,9 +23,9 @@ Kept in sync as each milestone lands. Legend: ✅ done · 🚧 in progress · �
 ## Phase 2 — URL registry + blocking
 | Milestone | Status | Notes |
 |---|---|---|
-| M2.0 Choose mechanism | ⬜ | Domain (VPN) / path (a11y address-bar) / hybrid — decision. |
-| M2.1 Local VPN skeleton | ⬜ | `VpnService`; DNS/hostname allow-deny. |
-| M2.2 Registry store | ⬜ | Room table; lookup-before-classify. |
+| M2.0 Choose mechanism | ✅ | **Hybrid** chosen (domain via VpnService + path via a11y address-bar later). Written up with limits in `docs/decisions/0001-url-blocking-mechanism.md`. |
+| M2.1 Local VPN skeleton | ⬜ | `VpnService`; DNS/hostname allow-deny. Built next. |
+| M2.2 Registry store | ✅ | Room v2 (`blocked_entries`, migration 1→2, enum converters) + `RegistryDao` (indexed EXISTS lookup) + `RegistryRepository` (`isHostBlocked`/`isUrlBlocked` with domain-covers-URL fallback) + pure `UrlNormalizer` (scheme-dropping so http/https unify). Built **before** M2.1 since both the VPN filter and classifier consult it. Tests: `UrlNormalizerTest`, `RegistryRepositoryTest`. Done-when: a registered entry blocks instantly without re-classifying. |
 | M2.3 Classifier | ⬜ | Blocklists + heuristics first. |
 
 ## Phase 3 — On-screen text + context blocking

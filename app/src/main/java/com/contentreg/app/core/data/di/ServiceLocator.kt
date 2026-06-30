@@ -9,6 +9,7 @@ import com.contentreg.app.core.sensing.ScrollMonitor
 import com.contentreg.app.feature1_doomscroll.budget.BudgetRepository
 import com.contentreg.app.feature1_doomscroll.budget.BudgetRepositoryRoom
 import com.contentreg.app.feature1_doomscroll.budget.TimeBudgetTracker
+import com.contentreg.app.feature2_url.registry.RegistryRepository
 
 /**
  * M1.2 — tiny manual dependency container. Both the AccessibilityService and the UI need the same
@@ -34,6 +35,8 @@ object ServiceLocator {
     val overlayManager: OverlayManager by lazy { OverlayManager(appContext) }
 
     val budgetRepository: BudgetRepository by lazy { BudgetRepositoryRoom(database.budgetDao()) }
+
+    val registryRepository: RegistryRepository by lazy { RegistryRepository(database.registryDao()) }
 
     val timeBudgetTracker: TimeBudgetTracker by lazy {
         TimeBudgetTracker(
