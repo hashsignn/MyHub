@@ -10,7 +10,7 @@
   - notificationTimeout throttles event delivery to limit churn on the hot path.
 -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeWindowStateChanged|typeViewScrolled"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeViewScrolled|typeWindowContentChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:accessibilityFlags="flagRetrieveInteractiveWindows|flagIncludeNotImportantViews"
     android:canRetrieveWindowContent="true"

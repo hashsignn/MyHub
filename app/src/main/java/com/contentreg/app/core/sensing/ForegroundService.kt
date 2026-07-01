@@ -9,6 +9,7 @@ import com.contentreg.app.feature1_doomscroll.budget.BudgetMath
 import com.contentreg.app.feature3_text.ScreenTextPipeline
 import com.contentreg.app.feature3_text.ScreenTextReader
 import com.contentreg.app.feature3_text.TextBlockDecider
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -39,8 +40,11 @@ class ForegroundService : AccessibilityService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    // M3.0 — debounce handle; cancelled and re-created on each window-state event.
+    // M3.0 — debounce handle; shared between state-changed and content-changed paths.
     private var textReadJob: Job? = null
+
+    // M3.0 fix — per-package timestamp of the last successful text push (content-changed throttle).
+    private val lastContentReadMs = ConcurrentHashMap<String, Long>()
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -142,20 +146,50 @@ class ForegroundService : AccessibilityService() {
     }
 
     /**
-     * M3.0 — debounced text read. Cancels any pending read before scheduling a new one so rapid
-     * navigation events (SPAs, tab switching) collapse to a single snapshot per settled page.
+     * M3.0 — debounced text read on app-switch (TYPE_WINDOW_STATE_CHANGED). Short delay so
+     * a page already loaded when the user switches back is classified quickly.
      */
     private fun scheduleTextRead(packageName: String) {
         textReadJob?.cancel()
         textReadJob = serviceScope.launch {
             delay(TEXT_READ_DELAY_MS)
-            val snapshot = withContext(Dispatchers.Main) {
-                ScreenTextReader.read(getRootInActiveWindow(), packageName)
-            }
-            if (snapshot.hasContent) {
-                Log.d(TAG, "M3.0 snapshot: pkg=$packageName url=${snapshot.url} textLen=${snapshot.pageText.length}")
-                ScreenTextPipeline.push(snapshot)
-            }
+            doTextRead(packageName)
+        }
+    }
+
+    /**
+     * M3.0 fix — debounced text read triggered by page content settling
+     * (TYPE_WINDOW_CONTENT_CHANGED). Longer delay so rapid load events collapse to one read per
+     * quiet period. Rate-limited per package so a live-updating page doesn't spin the CPU.
+     *
+     * Fixes Bug #1 (classifier never sees real content) and Bug #3 (cookie dialog seen instead
+     * of page body): by waiting for the content to settle, we read AFTER the page renders and
+     * AFTER the user dismisses consent dialogs, each of which fires its own content-changed event.
+     */
+    private fun scheduleContentRead(packageName: String) {
+        val now = System.currentTimeMillis()
+        if (now - lastContentReadMs.getOrDefault(packageName, 0L) < CONTENT_READ_MIN_INTERVAL_MS) return
+        textReadJob?.cancel()
+        textReadJob = serviceScope.launch {
+            delay(CONTENT_READ_DELAY_MS)
+            doTextRead(packageName)
+        }
+    }
+
+    /**
+     * Reads the accessibility tree and pushes a snapshot to [ScreenTextPipeline] if the content
+     * is meaningful (URL present OR page text at least [MIN_CONTENT_CHARS] chars — filters out
+     * loading skeletons and trivially short cookie-only states).
+     */
+    private suspend fun doTextRead(packageName: String) {
+        val snapshot = withContext(Dispatchers.Main) {
+            ScreenTextReader.read(getRootInActiveWindow(), packageName)
+        }
+        val usable = snapshot.url != null || snapshot.pageText.length >= MIN_CONTENT_CHARS
+        if (usable) {
+            Log.d(TAG, "M3.0 snapshot: pkg=$packageName url=${snapshot.url} textLen=${snapshot.pageText.length}")
+            lastContentReadMs[packageName] = System.currentTimeMillis()
+            ScreenTextPipeline.push(snapshot)
         }
     }
 
@@ -184,6 +218,16 @@ class ForegroundService : AccessibilityService() {
                 // M1.1 — scroll detection. ScrollMonitor drops anything not from a target app.
                 ScrollMonitor.recordScroll(packageName, now)
             }
+
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+                // M3.0 fix — re-read when the active page's DOM settles (in-tab navigation,
+                // lazy image loads, cookie-dialog dismissal). Only process events from the
+                // currently-foreground package so background-service noise is ignored.
+                val fgPkg = ForegroundAppTracker.currentPackage
+                if (fgPkg != null && packageName == fgPkg) {
+                    scheduleContentRead(packageName)
+                }
+            }
         }
     }
 
@@ -202,6 +246,9 @@ class ForegroundService : AccessibilityService() {
     companion object {
         private const val TAG = "ForegroundService"
         private const val TICK_INTERVAL_MS = 1_000L
-        private const val TEXT_READ_DELAY_MS = 800L  // M3.0 debounce
+        private const val TEXT_READ_DELAY_MS = 800L    // state-changed debounce (page already loaded)
+        private const val CONTENT_READ_DELAY_MS = 1_500L  // content-changed debounce (wait for DOM settle)
+        private const val CONTENT_READ_MIN_INTERVAL_MS = 3_000L  // per-package read throttle
+        private const val MIN_CONTENT_CHARS = 200  // skip loading skeletons / pure cookie walls
     }
 }
