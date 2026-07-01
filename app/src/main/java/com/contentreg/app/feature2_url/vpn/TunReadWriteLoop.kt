@@ -23,7 +23,7 @@ class TunReadWriteLoop(
     private val tunOutput: FileOutputStream,
     private val protect: (DatagramSocket) -> Boolean,
     private val isHostBlocked: (host: String) -> Boolean,
-    private val upstreamDns: InetAddress,
+    private val upstreamServers: List<InetAddress>,
 ) {
 
     @Volatile private var running = true
@@ -61,21 +61,31 @@ class TunReadWriteLoop(
         }
     }
 
-    private fun forwardUpstream(dns: ByteArray): ByteArray? = try {
+    /** Tries each upstream resolver in order; returns the first reply, or null if all fail. */
+    private fun forwardUpstream(dns: ByteArray): ByteArray? {
+        for (server in upstreamServers) {
+            val reply = queryServer(dns, server)
+            if (reply != null) return reply
+        }
+        Log.w(TAG, "All ${upstreamServers.size} upstream DNS server(s) failed for this query")
+        return null
+    }
+
+    private fun queryServer(dns: ByteArray, server: InetAddress): ByteArray? = try {
         DatagramSocket().use { socket ->
             if (!protect(socket)) {
                 Log.w(TAG, "protect() returned false — upstream query dropped")
                 return null
             }
             socket.soTimeout = UPSTREAM_TIMEOUT_MS
-            socket.send(DatagramPacket(dns, dns.size, upstreamDns, DNS_PORT))
+            socket.send(DatagramPacket(dns, dns.size, server, DNS_PORT))
             val buf = ByteArray(MAX_PACKET)
             val reply = DatagramPacket(buf, buf.size)
             socket.receive(reply)
             buf.copyOf(reply.length)
         }
     } catch (e: Exception) {
-        Log.w(TAG, "forwardUpstream to $upstreamDns failed: ${e.javaClass.simpleName}: ${e.message}")
+        Log.w(TAG, "upstream $server failed: ${e.javaClass.simpleName}: ${e.message}")
         null
     }
 
@@ -83,6 +93,7 @@ class TunReadWriteLoop(
         private const val TAG = "TunReadWriteLoop"
         private const val MAX_PACKET = 32_767
         private const val DNS_PORT = 53
-        private const val UPSTREAM_TIMEOUT_MS = 5_000
+        // Per-server timeout kept short so the browser doesn't hang; we may try several servers.
+        private const val UPSTREAM_TIMEOUT_MS = 2_000
     }
 }

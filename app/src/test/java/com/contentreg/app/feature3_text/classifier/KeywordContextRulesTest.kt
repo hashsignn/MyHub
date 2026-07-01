@@ -68,15 +68,21 @@ class KeywordContextRulesTest {
     // ── Safe-context words reduce confidence ─────────────────────────────────────────────
 
     @Test
-    fun `porn in recovery context is not blocked`() {
+    fun `explicit keyword blocks even in a safe context`() {
+        // Bias: hardcore terms always block, even on a recovery/therapy page (accepted tradeoff).
         val result = score("porn addiction recovery support group therapy")
-        assertFalse(result.shouldBlock)
-        assertEquals(ClassificationReason.SAFE_CONTEXT, result.reason)
+        assertTrue(result.shouldBlock)
+        assertEquals(ClassificationReason.EXPLICIT_KEYWORD, result.reason)
     }
 
     @Test
-    fun `pornography in medical education context is not blocked`() {
-        assertFalse(score("pornography addiction medical research study statistics").shouldBlock)
+    fun `pornography blocks even with medical framing`() {
+        assertTrue(score("pornography addiction medical research study statistics").shouldBlock)
+    }
+
+    @Test
+    fun `explicit keyword with a single safe word still blocks`() {
+        assertTrue(score("porn research").shouldBlock)
     }
 
     @Test
@@ -100,9 +106,20 @@ class KeywordContextRulesTest {
     }
 
     @Test
-    fun `hentai in academic definition context is not blocked`() {
-        // "Wikipedia" + "definition" + "history of" should heavily discount
-        assertFalse(score("hentai wikipedia definition history of academic analysis").shouldBlock)
+    fun `hentai blocks even with academic framing`() {
+        assertTrue(score("hentai wikipedia definition history of academic analysis").shouldBlock)
+    }
+
+    @Test
+    fun `a single safe word does not rescue an amplified moderate hit`() {
+        // Only one safe word ("study") is present, so no discount applies; amplifiers push it over.
+        assertTrue(score("nude study video watch").shouldBlock)
+    }
+
+    @Test
+    fun `several distinct moderate terms accumulate to a block`() {
+        // No amplifiers, no safe context: distinct suspicious terms stack over the threshold.
+        assertTrue(score("nude erotic lewd").shouldBlock)
     }
 
     // ── Amplifiers raise confidence ───────────────────────────────────────────────────────
