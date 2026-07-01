@@ -3,10 +3,13 @@ package com.contentreg.app.feature3_text.classifier
 /**
  * M3.1 — context-aware keyword rules for on-screen text classification.
  *
- * Design goals:
- *  1. Explicit adult content is caught reliably (Tier 1, base confidence 0.90).
- *  2. Ambiguous words pass when they appear in medical, rehab, crime/news, or academic context.
- *  3. Amplifier words (video, watch, stream…) push borderline hits over the block threshold.
+ * Design goals (biased toward catching bad content — a false block on a safe page is acceptable,
+ * hardcore content slipping through on one "safe" word is not):
+ *  1. Explicit adult content (Tier 1) ALWAYS blocks — context is ignored for these words.
+ *  2. Ambiguous words (Tier 2/3) are rescued only by STRONG safe context (≥2 safe words nearby),
+ *     so a lone "research"/"university" can't wave a real adult page through.
+ *  3. Amplifiers AND accumulation across distinct suspicious terms push borderline pages over the
+ *     block threshold, catching pages "littered" with moderate terms even without classic amplifiers.
  *  4. All matching is lowercase, whole-word (or prefix where noted), within a context window.
  *
  * No ML model is used here. The rules are intentionally auditable — see [RULES], [SAFE_CONTEXT_WORDS],
@@ -20,10 +23,23 @@ object KeywordContextRules {
     /** Words within this many positions of a trigger keyword count as context. */
     internal const val CONTEXT_WINDOW = 12
 
+    /** Safe-context discount only applies once at least this many safe words are near a trigger. */
+    internal const val MIN_SAFE_WORDS_TO_DISCOUNT = 2
+
+    /** Each additional distinct suspicious keyword on the page adds this to the top score (capped). */
+    internal const val ACCUMULATION_PER_KEYWORD = 0.10f
+    internal const val ACCUMULATION_CAP = 0.30f
+
+    /** A keyword must score at least this on its own to count toward accumulation. */
+    internal const val ACCUMULATION_MIN = 0.40f
+
     internal enum class Tier(val baseConfidence: Float) {
-        EXPLICIT(0.90f),  // unambiguous adult content
-        MODERATE(0.65f),  // explicit when amplified; may be art / medical otherwise
-        CONTEXT(0.45f),   // legitimate in most contexts; blocks only with multiple amplifiers
+        // EXPLICIT always blocks regardless of context. These words have no legitimate standalone
+        // use in normal browsing, so we deliberately accept blocking the rare medical/news/recovery
+        // page that quotes them rather than let hardcore content slip past on one "safe" word.
+        EXPLICIT(1.00f),
+        MODERATE(0.65f),  // explicit when amplified or stacked; rescued only by strong (>=2) safe context
+        CONTEXT(0.45f),   // usually legitimate; blocks only when stacked with amplifiers / other terms
     }
 
     internal data class Rule(
@@ -77,7 +93,7 @@ object KeywordContextRules {
         "counseling", "research", "study", "statistics", "science", "journal",
         // Rehab / awareness / self-improvement
         "recovery", "addiction", "abstinence", "sober", "quitting", "overcome",
-        "anti-porn", "pornfree", "nofap", "support", "awareness", "sobriety",
+        "pornfree", "nofap", "support", "awareness", "sobriety",
         // Crime / news / legal reporting
         "arrested", "charged", "convicted", "illegal", "crime", "criminal",
         "trafficking", "abuse", "victim", "survivor", "rescue", "lawsuit",
@@ -108,29 +124,61 @@ object KeywordContextRules {
         if (text.isBlank()) return TextClassification.CLEAN
         val words = tokenize(text)
         var best = TextClassification.CLEAN
+        var distinctSuspicious = 0
 
         for (rule in RULES) {
-            for (hitIndex in findHits(words, rule)) {
+            val hits = findHits(words, rule)
+            if (hits.isEmpty()) continue
+
+            var ruleConfidence = 0f
+            var ruleReason = ClassificationReason.NO_MATCH
+            for (hitIndex in hits) {
                 val window = contextWindow(words, hitIndex, CONTEXT_WINDOW)
-                val discount = safeDiscount(window)
-                val bonus = amplifierBonus(window)
-                val confidence = (rule.tier.baseConfidence + bonus - discount).coerceIn(0f, 1f)
-                val reason = when {
-                    discount > 0.20f           -> ClassificationReason.SAFE_CONTEXT
-                    rule.tier == Tier.EXPLICIT -> ClassificationReason.EXPLICIT_KEYWORD
-                    else                       -> ClassificationReason.CONTEXT_KEYWORD
-                }
-                if (confidence > best.confidence) {
-                    best = TextClassification(
-                        confidence = confidence,
-                        reason = reason,
-                        triggeredKeyword = rule.keyword,
-                        shouldBlock = confidence >= BLOCK_THRESHOLD,
-                    )
+                val (conf, reason) = scoreHit(rule, window)
+                if (conf > ruleConfidence) {
+                    ruleConfidence = conf
+                    ruleReason = reason
                 }
             }
+
+            // Count a keyword toward accumulation only if it stayed suspicious on its own (i.e.
+            // wasn't fully discounted by safe context), so art/medical terms don't pile up.
+            if (ruleConfidence >= ACCUMULATION_MIN) distinctSuspicious++
+
+            if (ruleConfidence > best.confidence) {
+                best = TextClassification(
+                    confidence = ruleConfidence,
+                    reason = ruleReason,
+                    triggeredKeyword = rule.keyword,
+                    shouldBlock = ruleConfidence >= BLOCK_THRESHOLD,
+                )
+            }
+        }
+
+        if (best.reason == ClassificationReason.NO_MATCH) return TextClassification.CLEAN
+
+        // Accumulation: multiple distinct still-suspicious terms on one page stack toward a block.
+        // Never applied to EXPLICIT (already 1.0) and never to fully-discounted safe-context terms.
+        if (best.reason != ClassificationReason.EXPLICIT_KEYWORD && distinctSuspicious >= 2) {
+            val bonus = ((distinctSuspicious - 1) * ACCUMULATION_PER_KEYWORD).coerceAtMost(ACCUMULATION_CAP)
+            val boosted = (best.confidence + bonus).coerceIn(0f, 1f)
+            best = best.copy(confidence = boosted, shouldBlock = boosted >= BLOCK_THRESHOLD)
         }
         return best
+    }
+
+    /** Confidence + reason for a single keyword hit given its surrounding [window]. */
+    private fun scoreHit(rule: Rule, window: List<String>): Pair<Float, ClassificationReason> {
+        if (rule.tier == Tier.EXPLICIT) {
+            // Always blocks; safe context and amplifiers are irrelevant.
+            return Tier.EXPLICIT.baseConfidence to ClassificationReason.EXPLICIT_KEYWORD
+        }
+        val discount = safeDiscount(window)
+        val bonus = amplifierBonus(window)
+        val confidence = (rule.tier.baseConfidence + bonus - discount).coerceIn(0f, 1f)
+        val reason =
+            if (discount > 0f) ClassificationReason.SAFE_CONTEXT else ClassificationReason.CONTEXT_KEYWORD
+        return confidence to reason
     }
 
     // ── Internal helpers (internal for unit tests) ────────────────────────────────────────
@@ -164,7 +212,11 @@ object KeywordContextRules {
         return words.subList(from, to)
     }
 
-    /** Each safe-context word found near the trigger reduces confidence by 0.25, capped at 0.60. */
+    /**
+     * Discount from safe-context words near the trigger: 0.25 each, capped at 0.60 — but only once
+     * at least [MIN_SAFE_WORDS_TO_DISCOUNT] are present. A single stray safe word rescues nothing,
+     * so real adult pages can't slip through on one coincidental "study"/"university".
+     */
     internal fun safeDiscount(window: List<String>): Float {
         val windowText = window.joinToString(" ")
         var hits = 0
@@ -177,6 +229,7 @@ object KeywordContextRules {
             }
             if (found) hits++
         }
+        if (hits < MIN_SAFE_WORDS_TO_DISCOUNT) return 0f
         return (hits * 0.25f).coerceAtMost(0.60f)
     }
 
