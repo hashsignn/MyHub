@@ -39,6 +39,15 @@ Kept in sync as each milestone lands. Legend: ✅ done · 🚧 in progress · �
 
 > **Phase 3 complete.** All 80 unit tests pass. Pipeline: M3.0 reads screen → M3.1 classifies with context awareness → M3.2 reuses M1.3 overlay and writes URL-level registry entries. `ModelClassifier` stub seam ready for LiteRT/ONNX when needed.
 
+## Bug fixes (post-Phase 4 device test)
+| Bug | Severity | Fix commit | Notes |
+|---|---|---|---|
+| #1/#3 TYPE_WINDOW_CONTENT_CHANGED + cookie dialogs | HIGH | 27a8fbe | Added content-changed event type; 1.5s debounce + 3s throttle; skip snapshots < 200 chars |
+| #2 Duplicate coroutines on AccessibilityService re-bind | MEDIUM | ec64786 | serviceScope cancel+recreate at top of onServiceConnected(); textReadJob nulled |
+| #4 EXPLICIT keyword overridden by single safe word | HIGH | cb6f13d | Already fixed in upstream commit; MIN_SAFE_WORDS_TO_DISCOUNT=2, EXPLICIT bypasses safeDiscount() |
+| #5 Settings app list ~4s spinner | LOW | 0ea993e | AppRow.icon nullable; icons loaded lazily via view.post() with per-adapter cache + tag guard |
+| #6 VPN dies silently, no recovery | MEDIUM | 04411ed | startForeground(specialUse), onRevoke(), isRunning→StateFlow, MainActivity observes live state |
+
 ## Phase 4 — Retention & onboarding
 | Milestone | Status | Notes |
 |---|---|---|
