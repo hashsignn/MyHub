@@ -109,7 +109,7 @@ class SettingsActivity : AppCompatActivity() {
                 AppRow(
                     packageName = appInfo.packageName,
                     label = pm.getApplicationLabel(appInfo).toString(),
-                    icon = pm.getApplicationIcon(appInfo),
+                    icon = null,  // Bug #5: loaded lazily by AppListAdapter to avoid spinner delay
                     checked = appInfo.packageName in selected,
                 )
             }
