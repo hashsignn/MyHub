@@ -38,7 +38,8 @@ import kotlinx.coroutines.withContext
  */
 class ForegroundService : AccessibilityService() {
 
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    // var so onServiceConnected() can cancel+recreate on every re-bind (Bug #2 guard).
+    private var serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     // M3.0 — debounce handle; shared between state-changed and content-changed paths.
     private var textReadJob: Job? = null
@@ -48,6 +49,11 @@ class ForegroundService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        // Cancel any coroutines from a prior bind (Chrome/YouTube can re-call onServiceConnected()
+        // without an onDestroy(), which would otherwise stack duplicate tickers / collectors).
+        serviceScope.cancel()
+        serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        textReadJob = null
         Log.i(TAG, "Accessibility service connected; foreground sensing active.")
         startSettingsSync()
         startBudgetTicker()
