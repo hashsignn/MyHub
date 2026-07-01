@@ -1,11 +1,18 @@
 package com.contentreg.app.feature2_url
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.net.ConnectivityManager
 import android.net.VpnService
+import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import com.contentreg.app.R
 import com.contentreg.app.core.data.di.ServiceLocator
 import com.contentreg.app.feature2_url.classifier.Blocklist
 import com.contentreg.app.feature2_url.classifier.ClassificationReason
@@ -17,6 +24,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -50,11 +60,46 @@ class FilterVpnService : VpnService() {
                 START_NOT_STICKY
             }
             else -> {
+                // Promote to foreground before startVpn() so the OS can't kill us mid-setup.
+                createNotificationChannel()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    startForeground(
+                        NOTIFICATION_ID,
+                        buildNotification(),
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
+                    )
+                } else {
+                    startForeground(NOTIFICATION_ID, buildNotification())
+                }
                 startVpn()
                 START_STICKY
             }
         }
     }
+
+    // Bug #6 — called by the OS when the user revokes VPN permission externally (e.g. in Settings).
+    // Without this override the TUN stays open but orphaned; here we clean up and mark isRunning=false.
+    override fun onRevoke() {
+        stopVpn()
+        stopSelf()
+    }
+
+    private fun createNotificationChannel() {
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            getString(R.string.vpn_notif_channel_name),
+            NotificationManager.IMPORTANCE_LOW,
+        )
+        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+    }
+
+    private fun buildNotification(): Notification =
+        NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.vpn_notif_title))
+            .setContentText(getString(R.string.vpn_notif_text))
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setOngoing(true)
+            .build()
 
     /**
      * Reads the first DNS server from the active network's link properties *before* the VPN
@@ -118,7 +163,7 @@ class FilterVpnService : VpnService() {
             return
         }
         tunInterface = pfd
-        isRunning = true
+        _isRunning.value = true
 
         val tunLoop = TunReadWriteLoop(
             tunInput = FileInputStream(pfd.fileDescriptor),
@@ -156,7 +201,9 @@ class FilterVpnService : VpnService() {
         loop = null
         runCatching { tunInterface?.close() }
         tunInterface = null
-        isRunning = false
+        _isRunning.value = false
+        @Suppress("DEPRECATION")
+        stopForeground(true)
         Log.i(TAG, "VPN filter stopped")
     }
 
@@ -170,6 +217,8 @@ class FilterVpnService : VpnService() {
         private const val TAG = "FilterVpnService"
         private const val VPN_ADDRESS = "10.111.222.1"
         private const val VIRTUAL_DNS = "10.111.222.2"
+        private const val CHANNEL_ID = "vpn_filter"
+        private const val NOTIFICATION_ID = 1001
 
         // Public resolvers tried after the device's own. 8.8.8.8 first — it's reachable on the
         // Android emulator where 1.1.1.1 is sometimes blocked.
@@ -178,10 +227,9 @@ class FilterVpnService : VpnService() {
         private const val ACTION_START = "com.contentreg.app.VPN_START"
         private const val ACTION_STOP = "com.contentreg.app.VPN_STOP"
 
-        /** Best-effort running flag for UI; the authoritative state is the live VPN itself. */
-        @Volatile
-        var isRunning: Boolean = false
-            private set
+        // StateFlow so MainActivity can observe the live running state; replaces @Volatile Boolean.
+        private val _isRunning = MutableStateFlow(false)
+        val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
 
         fun start(context: Context) {
             context.startService(

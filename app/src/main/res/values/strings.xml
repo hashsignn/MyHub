@@ -74,6 +74,11 @@
     <string name="onb_finish">Continue to app</string>
     <string name="m41_open_onboarding">Run setup / permissions</string>
 
+    <!-- Bug #6 — VPN foreground service notification. -->
+    <string name="vpn_notif_channel_name">URL filter</string>
+    <string name="vpn_notif_title">URL filter active</string>
+    <string name="vpn_notif_text">Blocking explicit domains on-device.</string>
+
     <!-- M4.2 — dashboard. -->
     <string name="m42_open_dashboard">Stats dashboard</string>
     <string name="dashboard_title">Your stats</string>

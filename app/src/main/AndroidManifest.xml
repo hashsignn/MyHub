@@ -12,6 +12,10 @@
     <!-- M2.1 — required for the upstream DNS forwarding socket in FilterVpnService. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Bug #6 — VPN foreground service (specialUse type, API 34+). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
     <!-- M1.3 — draw the block screen over other apps. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
@@ -103,14 +107,19 @@
             android:label="@string/dashboard_title"
             android:parentActivityName=".MainActivity" />
 
-        <!-- M2.1 — local DNS-filtering VPN (BIND_VPN_SERVICE-guarded; only the system binds it). -->
+        <!-- M2.1 — local DNS-filtering VPN (BIND_VPN_SERVICE-guarded; only the system binds it).
+             Bug #6: foregroundServiceType=specialUse keeps the service alive when backgrounded. -->
         <service
             android:name=".feature2_url.FilterVpnService"
             android:exported="false"
+            android:foregroundServiceType="specialUse"
             android:permission="android.permission.BIND_VPN_SERVICE">
             <intent-filter>
                 <action android:name="android.net.VpnService" />
             </intent-filter>
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="VPN-based domain filter — no traffic leaves the device" />
         </service>
 
         <!-- M1.0 — the single AccessibilityService (foreground sensing).

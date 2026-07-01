@@ -85,13 +85,11 @@ class MainActivity : AppCompatActivity() {
 
         // M2.1 — URL filter VPN toggle + a quick "block this domain" control for testing.
         binding.vpnToggleButton.setOnClickListener {
-            if (FilterVpnService.isRunning) {
+            if (FilterVpnService.isRunning.value) {
                 FilterVpnService.stop(this)
-                refreshVpnButton()
             } else {
                 val consent = PermissionRouter.prepareVpn(this)
                 if (consent != null) vpnConsentLauncher.launch(consent) else FilterVpnService.start(this)
-                refreshVpnButton()
             }
         }
         binding.blockDomainButton.setOnClickListener {
@@ -152,13 +150,22 @@ class MainActivity : AppCompatActivity() {
                         binding.registryCountText.text = getString(R.string.m21_registry_count, n)
                     }
                 }
+                // Bug #6 — observe live VPN state so the button stays correct even when the
+                // OS kills the service (e.g. permission revoked, low memory).
+                launch {
+                    FilterVpnService.isRunning.collect { running ->
+                        binding.vpnToggleButton.setText(
+                            if (running) R.string.m21_stop_vpn else R.string.m21_start_vpn,
+                        )
+                    }
+                }
             }
         }
     }
 
     private fun refreshVpnButton() {
         binding.vpnToggleButton.setText(
-            if (FilterVpnService.isRunning) R.string.m21_stop_vpn else R.string.m21_start_vpn,
+            if (FilterVpnService.isRunning.value) R.string.m21_stop_vpn else R.string.m21_start_vpn,
         )
     }
 
