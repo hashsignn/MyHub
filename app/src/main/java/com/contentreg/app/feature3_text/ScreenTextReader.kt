@@ -37,14 +37,38 @@ object ScreenTextReader {
      */
     fun read(root: AccessibilityNodeInfo?, packageName: String): ScreenSnapshot {
         root ?: return ScreenSnapshot(packageName, null, "")
+        // Scan the full live tree for a known URL-bar ID first — Chrome puts the url_bar node
+        // at position ~1218 in DFS order (web content comes first), well beyond MAX_NODES=200.
+        // A focused live scan reaches it without building the full node tree.
+        val liveUrl = findUrlInLiveTree(root)
         val counter = intArrayOf(0)
         val tree = toNodeInfo(root, depth = 0, counter = counter)
         root.recycle()
         return ScreenSnapshot(
             packageName = packageName,
-            url = findUrl(tree),
+            url = liveUrl ?: findUrl(tree),  // live scan covers ID lookup; tree covers heuristic
             pageText = collectText(tree),
         )
+    }
+
+    /**
+     * DFS over the raw [AccessibilityNodeInfo] tree with no node-count cap, returning the first
+     * URL-bar text found. Recycles child nodes as it goes. Does NOT recycle [node] itself —
+     * the caller ([read]) owns the root's lifecycle.
+     */
+    private fun findUrlInLiveTree(node: AccessibilityNodeInfo): String? {
+        val id = node.viewIdResourceName
+        if (id != null && id in URL_BAR_IDS) {
+            val t = node.text?.toString()?.trim()
+            if (!t.isNullOrBlank() && t.length in URL_MIN_LEN..URL_MAX_LEN) return t
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val result = findUrlInLiveTree(child)
+            child.recycle()
+            if (result != null) return result
+        }
+        return null
     }
 
     // ── Framework → pure data ────────────────────────────────────────────────────────────
