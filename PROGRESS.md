@@ -47,6 +47,7 @@ Kept in sync as each milestone lands. Legend: ✅ done · 🚧 in progress · �
 | #4 EXPLICIT keyword overridden by single safe word | HIGH | cb6f13d | Already fixed in upstream commit; MIN_SAFE_WORDS_TO_DISCOUNT=2, EXPLICIT bypasses safeDiscount() |
 | #5 Settings app list ~4s spinner | LOW | 0ea993e | AppRow.icon nullable; icons loaded lazily via view.post() with per-adapter cache + tag guard |
 | #6 VPN dies silently, no recovery | MEDIUM | 04411ed | startForeground(specialUse), onRevoke(), isRunning→StateFlow, MainActivity observes live state |
+| url=null in Chrome M3.0 snapshots | — | 46adda1 | url_bar at node 1218 > MAX_NODES=200; findUrlInLiveTree() does unbounded DFS before toNodeInfo(), confirmed url=domain on device |
 
 ## Phase 4 — Retention & onboarding
 | Milestone | Status | Notes |
