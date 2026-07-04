@@ -89,6 +89,16 @@
     <string name="admin_turn_on">Turn on uninstall protection</string>
     <string name="admin_turn_off">Turn off uninstall protection</string>
 
+    <!-- Task 3 — custom home-screen icon via a pinned photo shortcut. -->
+    <string name="settings_shortcut_heading">Custom home-screen icon (photo)</string>
+    <string name="settings_shortcut_subtitle">Pin a home-screen shortcut with a photo you choose and your own label — it opens the app. (Stock Android can\'t change the built-in app icon to a photo; this is the supported alternative.)</string>
+    <string name="shortcut_label_hint">Shortcut name (e.g. a name)</string>
+    <string name="shortcut_add_button">Pick photo &amp; add shortcut</string>
+    <string name="shortcut_default_label">ContentReg</string>
+    <string name="shortcut_requested">Shortcut request sent — confirm it on your home screen.</string>
+    <string name="shortcut_unsupported">Your launcher doesn\'t support pinning shortcuts.</string>
+    <string name="shortcut_error">Couldn\'t read that image. Try another.</string>
+
     <!-- Bug #6 — VPN foreground service notification. -->
     <string name="vpn_notif_channel_name">URL filter</string>
     <string name="vpn_notif_title">URL filter active</string>

@@ -1,8 +1,13 @@
 package com.contentreg.app.feature1_doomscroll.ui
 
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -15,6 +20,8 @@ import com.contentreg.app.feature4_retention.IconAliasController
 import com.contentreg.app.feature4_retention.admin.AdminController
 import com.contentreg.app.feature4_retention.admin.UninstallProtection
 import com.contentreg.app.feature4_retention.consent.ConsentActivity
+import com.contentreg.app.feature4_retention.shortcut.IconImageStore
+import com.contentreg.app.feature4_retention.shortcut.PhotoShortcutController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -35,6 +42,12 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var adapter: AppListAdapter
 
+    /** Task 3 — modern Photo Picker (no storage permission); result pins a custom-icon shortcut. */
+    private val pickPhoto =
+        registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            if (uri != null) onPhotoPicked(uri)
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
@@ -45,6 +58,7 @@ class SettingsActivity : AppCompatActivity() {
         setupDisguisePicker()
         setupPrivacy()
         setupAdmin()
+        setupShortcut()
         setupAppList()
     }
 
@@ -83,6 +97,41 @@ class SettingsActivity : AppCompatActivity() {
         super.onResume()
         // Re-read admin state after returning from the system activation screen.
         refreshAdminUi()
+    }
+
+    /** Task 3 — pick a photo and pin a custom-icon home-screen shortcut that opens the app. */
+    private fun setupShortcut() {
+        binding.addShortcutButton.setOnClickListener {
+            if (!PhotoShortcutController.isSupported(this)) {
+                toast(getString(R.string.shortcut_unsupported))
+            } else {
+                pickPhoto.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                )
+            }
+        }
+    }
+
+    private fun onPhotoPicked(uri: Uri) {
+        val label = binding.shortcutLabelEdit.text?.toString()?.trim()?.ifEmpty { null }
+            ?: getString(R.string.shortcut_default_label)
+        lifecycleScope.launch {
+            // Decode + crop/scale/persist off the main thread; pin request on the main thread.
+            val icon = withContext(Dispatchers.IO) {
+                val source = contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
+                source?.let { IconImageStore.save(this@SettingsActivity, it) }
+            }
+            if (icon == null) {
+                toast(getString(R.string.shortcut_error))
+            } else {
+                val requested = PhotoShortcutController.requestPin(this@SettingsActivity, icon, label)
+                toast(getString(if (requested) R.string.shortcut_requested else R.string.shortcut_unsupported))
+            }
+        }
+    }
+
+    private fun toast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun setupDisguisePicker() {
