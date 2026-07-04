@@ -48,7 +48,8 @@ class TextBlockDecider(
         val classification = if (inRegistry) null else classifier.classify(snapshot)
 
         when (val decision = decide(url, inRegistry, classification)) {
-            Decision.Allow -> return
+            Decision.Allow ->
+                withContext(Dispatchers.Main) { overlay.setReason(OverlayManager.BlockReason.TEXT, false) }
 
             Decision.BlockOnly -> {
                 if (inRegistry) {
@@ -58,13 +59,13 @@ class TextBlockDecider(
                     Log.i(TAG, "Blocking conf=${fmt(classification?.confidence)}")
                     PrivacyLog.detail(TAG) { "Blocking kw=${classification?.triggeredKeyword} url=$url" }
                 }
-                withContext(Dispatchers.Main) { overlay.show() }
+                withContext(Dispatchers.Main) { overlay.setReason(OverlayManager.BlockReason.TEXT, true) }
             }
 
             is Decision.BlockAndPersist -> {
                 Log.i(TAG, "Blocking conf=${fmt(classification?.confidence)}")
                 PrivacyLog.detail(TAG) { "Blocking kw=${classification?.triggeredKeyword} url=${decision.url}" }
-                withContext(Dispatchers.Main) { overlay.show() }
+                withContext(Dispatchers.Main) { overlay.setReason(OverlayManager.BlockReason.TEXT, true) }
                 scope.launch { persistBlock(decision) }
             }
         }

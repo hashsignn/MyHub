@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.contentreg.app.core.sensing.TargetApps
+import com.contentreg.app.feature1_doomscroll.reels.ReelApps
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -39,6 +40,18 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setTargetApps(packages: Set<String>) {
         context.dataStore.edit { prefs -> prefs[KEY_TARGET_APPS] = packages }
+    }
+
+    /**
+     * Which reel apps are actively blocked. Defaults to [ReelApps.supportedPackages]; the user can
+     * disable individual surfaces in settings. An empty set means nothing is reel-blocked.
+     */
+    val blockedReelApps: Flow<Set<String>> = context.dataStore.data.map { prefs ->
+        prefs[KEY_BLOCKED_REEL_APPS] ?: ReelApps.supportedPackages
+    }
+
+    suspend fun setBlockedReelApps(packages: Set<String>) {
+        context.dataStore.edit { prefs -> prefs[KEY_BLOCKED_REEL_APPS] = packages }
     }
 
     /** Which version of the curated blocklist has been seeded into the registry (M2.3). */
@@ -87,6 +100,7 @@ class SettingsStore(private val context: Context) {
         const val MAX_BUDGET_MINUTES = 60
         private val KEY_BUDGET_MINUTES = intPreferencesKey("budget_minutes")
         private val KEY_TARGET_APPS = stringSetPreferencesKey("target_apps")
+        private val KEY_BLOCKED_REEL_APPS = stringSetPreferencesKey("blocked_reel_apps")
         private val KEY_BLOCKLIST_SEED_VERSION = intPreferencesKey("blocklist_seed_version")
         private val KEY_APP_DISGUISE = stringPreferencesKey("app_disguise")
         private val KEY_ONBOARDING_COMPLETE = booleanPreferencesKey("onboarding_complete")

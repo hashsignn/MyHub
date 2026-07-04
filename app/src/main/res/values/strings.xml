@@ -30,11 +30,12 @@
     <string name="m13_test_exhaust">Test: exhaust budget</string>
     <string name="m13_test_reset">Test: reset budget</string>
 
-    <!-- M1.3 — block overlay content. -->
-    <string name="overlay_block_title">Time\'s up</string>
-    <string name="overlay_block_subtitle">You\'ve reached your feed time budget for this hour.</string>
-    <string name="overlay_block_reset">Resets in %1$s</string>
-    <string name="overlay_block_hint">Leave this app to keep using your phone.</string>
+    <!-- Block overlay content (reel tab / blocked page). -->
+    <string name="overlay_block_title">Blocked</string>
+    <string name="overlay_block_subtitle">This content is blocked.</string>
+    <string name="overlay_reel_subtitle">Short videos are blocked here.</string>
+    <string name="overlay_text_subtitle">This page is blocked.</string>
+    <string name="overlay_block_hint">Press Back to keep using the app.</string>
 
     <!-- M1.4 — settings screen. -->
     <string name="settings_title">Settings</string>

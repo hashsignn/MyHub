@@ -6,48 +6,78 @@ import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import android.view.WindowManager
+import com.contentreg.app.R
+import java.util.EnumSet
 
 /**
- * M1.3 — owns the single block overlay window: adds/removes a `TYPE_APPLICATION_OVERLAY` view via
- * [WindowManager]. Reused verbatim by M3.2 (text-triggered block), so there is exactly one overlay
- * stack in the app.
+ * Owns the single block-overlay window (a `TYPE_APPLICATION_OVERLAY` view via [WindowManager]).
  *
- * Threading: [show]/[hide]/[updateCountdown] touch the view hierarchy and WindowManager, so they
- * must be called on the main thread. The caller (ForegroundService's block controller) does that.
+ * The overlay can be requested for more than one independent reason — a reel surface being open
+ * ([BlockReason.REEL]) and the on-screen-text classifier ([BlockReason.TEXT]). Each producer toggles
+ * *its own* reason via [setReason]; the overlay is visible while **any** reason is active, and shows
+ * the subtitle of the highest-priority active reason. This avoids the two producers fighting over a
+ * single show/hide flag.
+ *
+ * Threading: all methods touch the view hierarchy / WindowManager and MUST be called on the main
+ * thread (the accessibility service dispatches to Main before calling in).
  */
 class OverlayManager(private val context: Context) {
+
+    /** Why the overlay is showing. Ordered by priority (REEL wins the subtitle if both are active). */
+    enum class BlockReason { REEL, TEXT }
 
     private val windowManager =
         context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
     private var overlay: BlockOverlayView? = null
+    private val activeReasons = EnumSet.noneOf(BlockReason::class.java)
 
     fun isShowing(): Boolean = overlay != null
 
-    /** Adds the block overlay if not already shown. No-op without overlay permission. */
-    fun show() {
-        if (overlay != null) return
-        if (!Settings.canDrawOverlays(context)) {
-            Log.w(TAG, "show() ignored: overlay permission not granted.")
-            return
-        }
-        val view = BlockOverlayView(context)
-        runCatching { windowManager.addView(view.root, buildLayoutParams()) }
-            .onSuccess { overlay = view }
-            .onFailure { Log.e(TAG, "Failed to add overlay", it) }
+    /** Turns one block [reason] on or off, then reconciles the overlay's visibility. */
+    fun setReason(reason: BlockReason, active: Boolean) {
+        val changed = if (active) activeReasons.add(reason) else activeReasons.remove(reason)
+        if (changed) render()
     }
 
-    /** Removes the block overlay if shown. */
-    fun hide() {
+    /** Clears every reason and removes the overlay (service teardown). */
+    fun clearAll() {
+        if (activeReasons.isEmpty() && overlay == null) return
+        activeReasons.clear()
+        render()
+    }
+
+    private fun render() {
+        if (activeReasons.isEmpty()) {
+            removeOverlay()
+            return
+        }
+        if (!Settings.canDrawOverlays(context)) {
+            Log.w(TAG, "block requested but overlay permission not granted.")
+            return
+        }
+        val view = overlay ?: addOverlay() ?: return
+        view.setSubtitle(context.getString(subtitleRes()))
+    }
+
+    private fun addOverlay(): BlockOverlayView? {
+        val view = BlockOverlayView(context)
+        return runCatching { windowManager.addView(view.root, buildLayoutParams()); view }
+            .onSuccess { overlay = it }
+            .onFailure { Log.e(TAG, "Failed to add overlay", it) }
+            .getOrNull()
+    }
+
+    private fun removeOverlay() {
         val view = overlay ?: return
         runCatching { windowManager.removeView(view.root) }
             .onFailure { Log.e(TAG, "Failed to remove overlay", it) }
         overlay = null
     }
 
-    /** Updates the "resets in" countdown while the overlay is visible. */
-    fun updateCountdown(remainingMs: Long) {
-        overlay?.setRemainingUntilReset(remainingMs)
+    private fun subtitleRes(): Int = when {
+        BlockReason.REEL in activeReasons -> R.string.overlay_reel_subtitle
+        else -> R.string.overlay_text_subtitle
     }
 
     private fun buildLayoutParams(): WindowManager.LayoutParams {
@@ -61,8 +91,8 @@ class OverlayManager(private val context: Context) {
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             type,
-            // Not focusable (don't steal key input from the system) but still touchable, so the
-            // overlay swallows taps meant for the feed underneath. Cover the whole screen.
+            // Not focusable, so the system Back key still reaches the app underneath and the user can
+            // navigate off the reel tab; still touchable, so taps meant for the reel are swallowed.
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT,
