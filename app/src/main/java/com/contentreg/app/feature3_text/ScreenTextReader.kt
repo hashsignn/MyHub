@@ -20,6 +20,11 @@ object ScreenTextReader {
     private const val URL_MIN_LEN = 4
     private const val URL_MAX_LEN = 2_048
 
+    // The URL scan (findUrlInLiveTree) walks the RAW tree, not the 200-node text tree, because
+    // browsers place the address bar late in DFS order (Chrome: ~node 1218). It is capped so a
+    // non-browser app with a huge tree can't walk it end-to-end on the main thread every read.
+    internal const val URL_SCAN_MAX_NODES = 3_000
+
     /** Pure representation of one node — no Android dependency, suitable for unit tests. */
     internal data class NodeInfo(
         val text: String?,
@@ -52,23 +57,65 @@ object ScreenTextReader {
     }
 
     /**
-     * DFS over the raw [AccessibilityNodeInfo] tree with no node-count cap, returning the first
-     * URL-bar text found. Recycles child nodes as it goes. Does NOT recycle [node] itself —
-     * the caller ([read]) owns the root's lifecycle.
+     * Capped DFS over the raw [AccessibilityNodeInfo] tree (via the [ScanNode] abstraction),
+     * returning the first URL-bar text found. Recycles child nodes as it goes. Does NOT recycle the
+     * root itself — the caller ([read]) owns the root's lifecycle.
+     *
+     * Uses the raw tree rather than the 200-node text tree because the address bar sits late in DFS
+     * order; capped at [URL_SCAN_MAX_NODES] so a non-browser app with a large tree can't walk it
+     * end-to-end on the main thread on every content-changed event.
      */
-    private fun findUrlInLiveTree(node: AccessibilityNodeInfo): String? {
-        val id = node.viewIdResourceName
-        if (id != null && id in URL_BAR_IDS) {
-            val t = node.text?.toString()?.trim()
-            if (!t.isNullOrBlank() && t.length in URL_MIN_LEN..URL_MAX_LEN) return t
-        }
+    private fun findUrlInLiveTree(root: AccessibilityNodeInfo): String? =
+        scanForUrl(LiveScanNode(root))
+
+    /**
+     * Minimal read-only node view for the URL scan. The production path adapts a live
+     * [AccessibilityNodeInfo] ([LiveScanNode]); unit tests supply a pure fake. This lets the exact
+     * traversal + cap that runs on device be exercised without the Android framework.
+     */
+    internal interface ScanNode {
+        val viewId: String?
+        val text: String?
+        val childCount: Int
+        fun child(index: Int): ScanNode?
+        /** Releases native resources for a child obtained via [child]; a no-op for test fakes. */
+        fun recycle()
+    }
+
+    private class LiveScanNode(private val node: AccessibilityNodeInfo) : ScanNode {
+        override val viewId: String? get() = node.viewIdResourceName
+        override val text: String? get() = node.text?.toString()
+        override val childCount: Int get() = node.childCount
+        override fun child(index: Int): ScanNode? = node.getChild(index)?.let { LiveScanNode(it) }
+        override fun recycle() = node.recycle()
+    }
+
+    /**
+     * DFS for the first URL-bar node, visiting at most [maxNodes] nodes. Recycles every child it
+     * fetches; never recycles [root] (the caller owns it). Stops descending once the cap is reached.
+     */
+    internal fun scanForUrl(root: ScanNode, maxNodes: Int = URL_SCAN_MAX_NODES): String? =
+        scan(root, intArrayOf(0), maxNodes)
+
+    private fun scan(node: ScanNode, counter: IntArray, maxNodes: Int): String? {
+        counter[0]++
+        urlBarText(node.viewId, node.text)?.let { return it }
+        if (counter[0] >= maxNodes) return null
         for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            val result = findUrlInLiveTree(child)
+            val child = node.child(i) ?: continue
+            val result = scan(child, counter, maxNodes)
             child.recycle()
             if (result != null) return result
+            if (counter[0] >= maxNodes) return null
         }
         return null
+    }
+
+    /** Returns the trimmed address-bar text iff [viewId] is a known URL bar and [text] is URL-length. */
+    internal fun urlBarText(viewId: String?, text: String?): String? {
+        if (viewId == null || viewId !in URL_BAR_IDS) return null
+        val t = text?.trim()
+        return if (!t.isNullOrBlank() && t.length in URL_MIN_LEN..URL_MAX_LEN) t else null
     }
 
     // ── Framework → pure data ────────────────────────────────────────────────────────────

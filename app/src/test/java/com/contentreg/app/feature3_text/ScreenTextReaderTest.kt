@@ -167,4 +167,72 @@ class ScreenTextReaderTest {
     fun `hasContent is true when pageText is non-empty`() {
         assertTrue(ScreenSnapshot("pkg", null, "some text").hasContent)
     }
+
+    // ── findUrlInLiveTree / scanForUrl — raw-tree URL scan with node cap (0b) ────────────────
+
+    /** Pure fake for the [ScreenTextReader.ScanNode] abstraction; records recycle() calls. */
+    private class FakeScanNode(
+        override val viewId: String? = null,
+        override val text: String? = null,
+        private val kids: List<FakeScanNode> = emptyList(),
+    ) : ScreenTextReader.ScanNode {
+        var recycled = 0
+            private set
+        override val childCount: Int get() = kids.size
+        override fun child(index: Int): ScreenTextReader.ScanNode? = kids.getOrNull(index)
+        override fun recycle() { recycled++ }
+    }
+
+    @Test
+    fun `scanForUrl finds a url bar node beyond the 200-node text cap`() {
+        // 260 plain leaves, then the address bar — reached at visit ~262, past MAX_NODES (200).
+        val kids = buildList {
+            repeat(260) { add(FakeScanNode(text = "leaf $it")) }
+            add(FakeScanNode(viewId = "com.android.chrome:id/url_bar", text = "reddit.com/r/nsfw"))
+        }
+        assertTrue("url bar must sit past the text tree cap", kids.size > ScreenTextReader.MAX_NODES)
+        assertEquals("reddit.com/r/nsfw", ScreenTextReader.scanForUrl(FakeScanNode(kids = kids)))
+    }
+
+    @Test
+    fun `scanForUrl returns null when the url bar is past the node cap`() {
+        val kids = buildList {
+            repeat(10) { add(FakeScanNode(text = "leaf $it")) }
+            add(FakeScanNode(viewId = "com.android.chrome:id/url_bar", text = "reddit.com/r/nsfw"))
+        }
+        val root = FakeScanNode(kids = kids)
+        // A cap of 5 stops the walk before the url bar (~visit 12); a generous cap still finds it.
+        assertNull(ScreenTextReader.scanForUrl(root, maxNodes = 5))
+        assertEquals("reddit.com/r/nsfw", ScreenTextReader.scanForUrl(root, maxNodes = 100))
+    }
+
+    @Test
+    fun `scanForUrl recycles visited children but never the root`() {
+        val a = FakeScanNode(text = "a")
+        val b = FakeScanNode(viewId = "com.android.chrome:id/url_bar", text = "example.com")
+        val root = FakeScanNode(kids = listOf(a, b))
+        assertEquals("example.com", ScreenTextReader.scanForUrl(root))
+        assertEquals(1, a.recycled)     // fetched + recycled
+        assertEquals(1, b.recycled)     // the matched child is still recycled by its parent frame
+        assertEquals(0, root.recycled)  // root is owned by the caller
+    }
+
+    @Test
+    fun `urlBarText returns trimmed text for a known url bar id`() {
+        assertEquals(
+            "example.com",
+            ScreenTextReader.urlBarText("com.android.chrome:id/url_bar", "  example.com  "),
+        )
+    }
+
+    @Test
+    fun `urlBarText returns null for an unknown view id`() {
+        assertNull(ScreenTextReader.urlBarText("com.android.chrome:id/tab_switcher", "example.com"))
+    }
+
+    @Test
+    fun `urlBarText returns null for too-short or blank text`() {
+        assertNull(ScreenTextReader.urlBarText("com.android.chrome:id/url_bar", "ab"))
+        assertNull(ScreenTextReader.urlBarText("com.android.chrome:id/url_bar", "   "))
+    }
 }
