@@ -2,10 +2,12 @@ package com.contentreg.app.feature3_text
 
 import android.util.Log
 import com.contentreg.app.core.overlay.OverlayManager
+import com.contentreg.app.core.util.PrivacyLog
 import com.contentreg.app.feature2_url.registry.BlockEntrySource
 import com.contentreg.app.feature2_url.registry.RegistryRepository
 import com.contentreg.app.feature2_url.registry.UrlNormalizer
 import com.contentreg.app.feature3_text.classifier.ContextClassifier
+import com.contentreg.app.feature3_text.classifier.TextClassification
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
@@ -40,43 +42,86 @@ class TextBlockDecider(
     }
 
     private suspend fun evaluate(snapshot: ScreenSnapshot) {
-        // Fast path: URL already registered → block without re-classifying.
-        if (snapshot.url != null && registry.isUrlBlocked(snapshot.url)) {
-            Log.d(TAG, "Registry hit: ${snapshot.url} — blocking immediately")
-            withContext(Dispatchers.Main) { overlay.show() }
-            return
+        val url = snapshot.url
+        val inRegistry = url != null && registry.isUrlBlocked(url)
+        // Registry hit is the fast path — skip the classifier entirely.
+        val classification = if (inRegistry) null else classifier.classify(snapshot)
+
+        when (val decision = decide(url, inRegistry, classification)) {
+            Decision.Allow -> return
+
+            Decision.BlockOnly -> {
+                if (inRegistry) {
+                    Log.d(TAG, "Registry hit — blocking immediately")
+                    PrivacyLog.detail(TAG) { "Registry hit url=$url" }
+                } else {
+                    Log.i(TAG, "Blocking conf=${fmt(classification?.confidence)}")
+                    PrivacyLog.detail(TAG) { "Blocking kw=${classification?.triggeredKeyword} url=$url" }
+                }
+                withContext(Dispatchers.Main) { overlay.show() }
+            }
+
+            is Decision.BlockAndPersist -> {
+                Log.i(TAG, "Blocking conf=${fmt(classification?.confidence)}")
+                PrivacyLog.detail(TAG) { "Blocking kw=${classification?.triggeredKeyword} url=${decision.url}" }
+                withContext(Dispatchers.Main) { overlay.show() }
+                scope.launch { persistBlock(decision) }
+            }
         }
-
-        val result = classifier.classify(snapshot)
-        if (!result.shouldBlock) return
-
-        Log.i(TAG, "Blocking: kw=${result.triggeredKeyword} " +
-            "conf=${"%.2f".format(result.confidence)} url=${snapshot.url}")
-
-        withContext(Dispatchers.Main) { overlay.show() }
-
-        val url = snapshot.url ?: return
-        scope.launch { persistBlock(url) }
     }
 
     /**
-     * Persists a URL-level block when a path is present, or a domain-level block for bare domains
-     * (no slash after the host). This preserves access to benign paths on the same host.
+     * Persists the block at the granularity chosen by [decide]: URL-level when a path is present
+     * (so only the specific page is blocked), or domain-level for a bare domain.
      */
-    private suspend fun persistBlock(url: String) {
-        val normalized = UrlNormalizer.normalizeUrl(url)
-        // A bare domain has no '/' after stripping the scheme + www.
-        val haspath = '/' in normalized
-        if (haspath) {
-            val added = registry.addUrl(url, BlockEntrySource.HEURISTIC)
-            Log.d(TAG, "Persisted URL block: $normalized (new=$added)")
-        } else {
-            val added = registry.addDomain(url, BlockEntrySource.HEURISTIC)
-            Log.d(TAG, "Persisted domain block: $normalized (new=$added)")
+    private suspend fun persistBlock(decision: Decision.BlockAndPersist) {
+        val added = when (decision.kind) {
+            PersistKind.URL -> registry.addUrl(decision.url, BlockEntrySource.HEURISTIC)
+            PersistKind.DOMAIN -> registry.addDomain(decision.url, BlockEntrySource.HEURISTIC)
         }
+        Log.d(TAG, "Persisted ${decision.kind} block (new=$added)")
+        PrivacyLog.detail(TAG) { "Persisted ${decision.kind} block: ${UrlNormalizer.normalizeUrl(decision.url)}" }
+    }
+
+    /** Granularity at which a heuristic block is written to the registry. */
+    internal enum class PersistKind { URL, DOMAIN }
+
+    /** The outcome of evaluating one snapshot. */
+    internal sealed interface Decision {
+        /** Nothing to do — allow the page. */
+        object Allow : Decision
+        /** Show the block overlay only (registry hit, or a block with no URL to persist). */
+        object BlockOnly : Decision
+        /** Show the block overlay and persist [url] at [kind] granularity. */
+        data class BlockAndPersist(val kind: PersistKind, val url: String) : Decision
     }
 
     companion object {
         private const val TAG = "TextBlockDecider"
+
+        private fun fmt(conf: Float?): String = "%.2f".format(conf ?: 0f)
+
+        /**
+         * Pure decision for one snapshot — no Android, no I/O, so it is unit-tested directly:
+         *  - a registry hit blocks immediately (overlay only; the entry is already persisted);
+         *  - a classifier verdict of `shouldBlock` blocks, and when a URL is present persists it at
+         *    URL granularity if the normalized form has a path, else domain granularity;
+         *  - everything else is allowed.
+         *
+         * [classification] may be null when the caller short-circuited on a registry hit.
+         */
+        internal fun decide(
+            url: String?,
+            isUrlInRegistry: Boolean,
+            classification: TextClassification?,
+        ): Decision {
+            if (url != null && isUrlInRegistry) return Decision.BlockOnly
+            val c = classification ?: return Decision.Allow
+            if (!c.shouldBlock) return Decision.Allow
+            if (url == null) return Decision.BlockOnly
+            val normalized = UrlNormalizer.normalizeUrl(url)
+            val kind = if ('/' in normalized) PersistKind.URL else PersistKind.DOMAIN
+            return Decision.BlockAndPersist(kind, url)
+        }
     }
 }
