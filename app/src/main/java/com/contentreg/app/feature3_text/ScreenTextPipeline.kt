@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.SharedFlow
 
 /**
  * M3.0 — in-process bus that carries [ScreenSnapshot] values from [ForegroundService] to any
- * downstream consumer. Mirrors the [ForegroundAppTracker] / [ScrollMonitor] pattern: the
- * accessibility service pushes in via [push]; feature logic (M3.1/M3.2) collects out.
+ * downstream consumer. Like [ForegroundAppTracker], it is an in-memory hand-off: the accessibility
+ * service pushes in via [push]; feature logic (M3.1/M3.2) collects out.
  *
  * Buffer of 1 with DROP_OLDEST ensures a slow classifier never stalls the service thread.
  */

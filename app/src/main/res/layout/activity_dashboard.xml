@@ -36,14 +36,6 @@
             tools:text="Feed blocks triggered: 12" />
 
         <TextView
-            android:id="@+id/usageText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:textSize="18sp"
-            tools:text="Feed time used this hour: 4:48" />
-
-        <TextView
             android:id="@+id/registryText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

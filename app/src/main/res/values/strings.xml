@@ -13,22 +13,10 @@
     <string name="m10_foreground_label">Foreground app:</string>
     <string name="m10_foreground_none">(waiting for a window change…)</string>
 
-    <!-- M1.1 — scroll detection readout. -->
-    <string name="m11_scroll_label">Target-app scrolls counted:</string>
-    <string name="m11_scroll_value">%1$d (last: %2$s)</string>
-    <string name="m11_scroll_none">0 (scroll a feed app to test)</string>
-
-    <!-- M1.2 — time-budget readout. -->
-    <string name="m12_budget_label">Time budget (this hour):</string>
-    <string name="m12_budget_value">%1$s used / %2$s — %3$s left</string>
-    <string name="m12_budget_exhausted">%1$s used / %2$s — budget exhausted</string>
-
-    <!-- M1.3 — overlay permission + block-overlay test controls. -->
+    <!-- Overlay permission (needed to draw the block screen). -->
     <string name="m13_grant_overlay">Grant \"draw over other apps\"</string>
     <string name="m13_overlay_on">Overlay permission: ON</string>
     <string name="m13_overlay_off">Overlay permission: OFF — needed to block</string>
-    <string name="m13_test_exhaust">Test: exhaust budget</string>
-    <string name="m13_test_reset">Test: reset budget</string>
 
     <!-- Block overlay content (reel tab / blocked page). -->
     <string name="overlay_block_title">Blocked</string>
@@ -37,13 +25,15 @@
     <string name="overlay_text_subtitle">This page is blocked.</string>
     <string name="overlay_block_hint">Press Back to keep using the app.</string>
 
-    <!-- M1.4 — settings screen. -->
+    <!-- Settings screen. -->
     <string name="settings_title">Settings</string>
-    <string name="m14_open_settings">Settings (budget &amp; apps)</string>
-    <string name="settings_budget_heading">Per-hour budget</string>
-    <string name="settings_budget_value">%1$d min / hour</string>
-    <string name="settings_apps_heading">Apps that count</string>
-    <string name="settings_apps_subtitle">Scrolling in these apps draws down the budget.</string>
+    <string name="m14_open_settings">Settings</string>
+    <string name="settings_reels_heading">Blocked short-video surfaces</string>
+    <string name="settings_reels_subtitle">When on, the Reels/Shorts tab in these apps is blocked; other tabs work normally. TikTok is all short video, so it is blocked whole-app.</string>
+    <string name="reel_app_instagram">Instagram Reels</string>
+    <string name="reel_app_youtube">YouTube Shorts</string>
+    <string name="reel_app_facebook">Facebook Reels</string>
+    <string name="reel_app_tiktok">TikTok (whole app)</string>
 
     <!-- M2.1 — URL filter (VPN) controls. -->
     <string name="m21_section">URL filter (Phase 2)</string>
@@ -117,8 +107,7 @@
     <!-- M4.2 — dashboard. -->
     <string name="m42_open_dashboard">Stats dashboard</string>
     <string name="dashboard_title">Your stats</string>
-    <string name="dashboard_blocks">Feed blocks triggered: %1$d</string>
+    <string name="dashboard_blocks">Blocks triggered: %1$d</string>
     <string name="dashboard_streak">Daily streak: %1$d days</string>
     <string name="dashboard_registry">Sites in block registry: %1$d</string>
-    <string name="dashboard_usage">Feed time used this hour: %1$s</string>
 </resources>

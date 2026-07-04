@@ -7,7 +7,6 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.contentreg.app.core.sensing.TargetApps
 import com.contentreg.app.feature1_doomscroll.reels.ReelApps
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -15,32 +14,10 @@ import kotlinx.coroutines.flow.map
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
 /**
- * M1.2 — user-configurable settings, persisted via DataStore (lightweight key-value, async,
- * survives process death). For now it holds the budget length; M1.4 adds the editable target-app
- * set here too.
+ * User-configurable settings, persisted via DataStore (lightweight key-value, async, survives
+ * process death).
  */
 class SettingsStore(private val context: Context) {
-
-    /** The per-hour budget in minutes (default [DEFAULT_BUDGET_MINUTES]). */
-    val budgetMinutes: Flow<Int> = context.dataStore.data.map { prefs ->
-        prefs[KEY_BUDGET_MINUTES] ?: DEFAULT_BUDGET_MINUTES
-    }
-
-    suspend fun setBudgetMinutes(minutes: Int) {
-        context.dataStore.edit { prefs -> prefs[KEY_BUDGET_MINUTES] = minutes.coerceAtLeast(1) }
-    }
-
-    /**
-     * The set of app packages whose scrolling counts (M1.4). Defaults to [TargetApps.DEFAULT] until
-     * the user edits the list in settings. An empty set is a valid choice (nothing counts).
-     */
-    val targetApps: Flow<Set<String>> = context.dataStore.data.map { prefs ->
-        prefs[KEY_TARGET_APPS] ?: TargetApps.DEFAULT
-    }
-
-    suspend fun setTargetApps(packages: Set<String>) {
-        context.dataStore.edit { prefs -> prefs[KEY_TARGET_APPS] = packages }
-    }
 
     /**
      * Which reel apps are actively blocked. Defaults to [ReelApps.supportedPackages]; the user can
@@ -83,8 +60,9 @@ class SettingsStore(private val context: Context) {
 
     /**
      * Which version of the prominent-disclosure text the user has consented to (Task 1). 0 = none.
-     * Compared against [com.contentreg.app.feature4_retention.consent.ConsentGate.CURRENT_CONSENT_VERSION]
-     * so bumping the disclosure copy re-prompts for fresh consent.
+     * Compared against
+     * [com.contentreg.app.feature4_retention.consent.ConsentGate.CURRENT_CONSENT_VERSION] so bumping
+     * the disclosure copy re-prompts for fresh consent.
      */
     val consentVersion: Flow<Int> = context.dataStore.data.map { prefs ->
         prefs[KEY_CONSENT_VERSION] ?: 0
@@ -95,18 +73,10 @@ class SettingsStore(private val context: Context) {
     }
 
     companion object {
-        const val DEFAULT_BUDGET_MINUTES = 5
-        const val MIN_BUDGET_MINUTES = 1
-        const val MAX_BUDGET_MINUTES = 60
-        private val KEY_BUDGET_MINUTES = intPreferencesKey("budget_minutes")
-        private val KEY_TARGET_APPS = stringSetPreferencesKey("target_apps")
         private val KEY_BLOCKED_REEL_APPS = stringSetPreferencesKey("blocked_reel_apps")
         private val KEY_BLOCKLIST_SEED_VERSION = intPreferencesKey("blocklist_seed_version")
         private val KEY_APP_DISGUISE = stringPreferencesKey("app_disguise")
         private val KEY_ONBOARDING_COMPLETE = booleanPreferencesKey("onboarding_complete")
         private val KEY_CONSENT_VERSION = intPreferencesKey("consent_version")
-
-        /** Convenience: minutes → milliseconds. */
-        fun minutesToMs(minutes: Int): Long = minutes.toLong() * 60L * 1000L
     }
 }

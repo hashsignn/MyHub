@@ -7,8 +7,6 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.contentreg.app.feature1_doomscroll.budget.BudgetDao
-import com.contentreg.app.feature1_doomscroll.budget.BudgetStateEntity
 import com.contentreg.app.feature2_url.registry.BlockedEntry
 import com.contentreg.app.feature2_url.registry.RegistryDao
 
@@ -16,17 +14,15 @@ import com.contentreg.app.feature2_url.registry.RegistryDao
  * The app's single Room database.
  *  - v1 (M1.2): durable budget state.
  *  - v2 (M2.2): adds the URL block registry.
- * Stats (M4.2) will add to this same database later.
+ *  - v3: reels replace the time budget — the `budget_state` table is dropped.
  */
 @Database(
-    entities = [BudgetStateEntity::class, BlockedEntry::class],
-    version = 2,
+    entities = [BlockedEntry::class],
+    version = 3,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
-
-    abstract fun budgetDao(): BudgetDao
 
     abstract fun registryDao(): RegistryDao
 
@@ -51,9 +47,16 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** Reels replace the budget: drop the now-unused budget_state table. */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS `budget_state`")
+            }
+        }
+
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, DB_NAME)
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
     }
 }

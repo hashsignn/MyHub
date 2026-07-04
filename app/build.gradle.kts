@@ -70,10 +70,6 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
 
-    // M1.4 — WorkManager backup hourly reset + RecyclerView for the settings app picker.
-    implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.androidx.recyclerview)
-
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)

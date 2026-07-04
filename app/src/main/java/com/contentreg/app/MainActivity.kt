@@ -8,12 +8,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.contentreg.app.core.data.di.ServiceLocator
-import com.contentreg.app.core.data.prefs.SettingsStore
 import com.contentreg.app.core.permissions.PermissionRouter
 import com.contentreg.app.core.sensing.ForegroundAppTracker
-import com.contentreg.app.core.sensing.ScrollMonitor
 import com.contentreg.app.databinding.ActivityMainBinding
-import com.contentreg.app.feature1_doomscroll.budget.BudgetMath
 import com.contentreg.app.feature1_doomscroll.ui.SettingsActivity
 import com.contentreg.app.feature2_url.FilterVpnService
 import com.contentreg.app.feature2_url.registry.BlockEntrySource
@@ -21,16 +18,12 @@ import com.contentreg.app.feature4_retention.consent.ConsentActivity
 import com.contentreg.app.feature4_retention.consent.ConsentGate
 import com.contentreg.app.feature4_retention.onboarding.OnboardingActivity
 import com.contentreg.app.feature4_retention.stats.DashboardActivity
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 /**
- * M0.0 — app entry point. M1.0 — also the test harness for foreground sensing:
- * shows whether the accessibility service is enabled, routes the user to enable it, and displays
- * the live foreground package so the "open Instagram → see com.instagram.android" milestone is
- * verifiable on-device. Grows into onboarding (M4.1) / dashboard (M4.2) later.
+ * App entry point + a small dev harness: shows permission state, the live foreground package, and
+ * the URL-filter controls. On first launch it routes to consent → onboarding.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -65,28 +58,13 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, DashboardActivity::class.java))
         }
 
-        // Task 1 — gate on prominent-disclosure consent BEFORE onboarding. Consent must precede any
-        // sensitive access, so it is the first screen on a fresh install (and re-appears if the
-        // disclosure text is versioned up). Only once consented does onboarding show.
+        // Task 1 — consent gate before onboarding on first launch (consent must precede any grant).
         lifecycleScope.launch {
             val store = ServiceLocator.settingsStore
             if (ConsentGate.needsConsent(store.consentVersion.first())) {
                 startActivity(Intent(this@MainActivity, ConsentActivity::class.java))
             } else if (!store.onboardingComplete.first()) {
                 startActivity(Intent(this@MainActivity, OnboardingActivity::class.java))
-            }
-        }
-
-        // M1.3 test controls: exhaust/reset the budget without scrolling for minutes. With the
-        // budget exhausted, opening a feed app shows the block overlay.
-        binding.testExhaustButton.setOnClickListener {
-            lifecycleScope.launch {
-                ServiceLocator.timeBudgetTracker.debugSetUsedMs(DEBUG_EXHAUST_MS)
-            }
-        }
-        binding.testResetButton.setOnClickListener {
-            lifecycleScope.launch {
-                ServiceLocator.timeBudgetTracker.debugSetUsedMs(0L)
             }
         }
 
@@ -109,8 +87,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Observe the live foreground app + scroll activity while this screen is visible.
-        // repeatOnLifecycle ties the collectors to STARTED so they stop when backgrounded.
+        // Observe the live foreground app, registry size, and VPN state while this screen is visible.
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
@@ -120,45 +97,11 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 launch {
-                    ScrollMonitor.activity.collect { activity ->
-                        binding.scrollCountText.text = if (activity.totalScrollEvents == 0L) {
-                            getString(R.string.m11_scroll_none)
-                        } else {
-                            getString(
-                                R.string.m11_scroll_value,
-                                activity.totalScrollEvents,
-                                activity.lastScrollPackage,
-                            )
-                        }
-                    }
-                }
-                launch {
-                    // Combine the live budget state with the configured budget length so the
-                    // readout reflects both accumulation and the (M1.4-editable) allowance.
-                    val tracker = ServiceLocator.timeBudgetTracker
-                    combine(
-                        tracker.state,
-                        ServiceLocator.settingsStore.budgetMinutes,
-                    ) { state, minutes -> state to minutes }
-                        .collect { (state, minutes) ->
-                            val budgetMs = SettingsStore.minutesToMs(minutes)
-                            val used = formatDuration(state.usedMs)
-                            val total = formatDuration(budgetMs)
-                            binding.budgetValueText.text = if (BudgetMath.isExhausted(state, budgetMs)) {
-                                getString(R.string.m12_budget_exhausted, used, total)
-                            } else {
-                                val left = formatDuration(BudgetMath.remainingMs(state, budgetMs))
-                                getString(R.string.m12_budget_value, used, total, left)
-                            }
-                        }
-                }
-                launch {
                     ServiceLocator.registryRepository.count.collect { n ->
                         binding.registryCountText.text = getString(R.string.m21_registry_count, n)
                     }
                 }
-                // Bug #6 — observe live VPN state so the button stays correct even when the
-                // OS kills the service (e.g. permission revoked, low memory).
+                // Bug #6 — observe live VPN state so the button stays correct even if the OS kills it.
                 launch {
                     FilterVpnService.isRunning.collect { running ->
                         binding.vpnToggleButton.setText(
@@ -176,17 +119,9 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    /** Formats a duration in milliseconds as m:ss for the budget readout. */
-    private fun formatDuration(ms: Long): String {
-        val totalSeconds = ms / 1000L
-        val minutes = totalSeconds / 60L
-        val seconds = totalSeconds % 60L
-        return String.format(Locale.US, "%d:%02d", minutes, seconds)
-    }
-
     override fun onResume() {
         super.onResume()
-        // Re-check on resume: the user may have toggled the service in system settings and returned.
+        // Re-check on resume: the user may have toggled a permission in system settings and returned.
         refreshAccessibilityState()
         refreshVpnButton()
     }
@@ -204,10 +139,4 @@ class MainActivity : AppCompatActivity() {
         )
         binding.grantOverlayButton.isEnabled = !canOverlay
     }
-
-    companion object {
-        // Large enough to exhaust any sane budget within the current hour window.
-        private const val DEBUG_EXHAUST_MS = 24L * 60L * 60L * 1000L
-    }
 }
-
