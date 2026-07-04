@@ -1,0 +1,16 @@
+<!--
+  Monochrome status-bar icon for the VPN foreground-service notification.
+  Notification small icons must be white-on-transparent: Android uses only the alpha channel and
+  tints the shape, so a full-color adaptive icon (ic_launcher_foreground) renders as a blob. This
+  simple shield fills white and reads correctly in the status bar.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FFFFFFFF">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,1L3,5v6c0,5.55 3.84,10.74 9,12 5.16,-1.26 9,-6.45 9,-12V5L12,1z" />
+</vector>

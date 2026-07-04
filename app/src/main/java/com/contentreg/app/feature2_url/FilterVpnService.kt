@@ -97,7 +97,7 @@ class FilterVpnService : VpnService() {
         NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.vpn_notif_title))
             .setContentText(getString(R.string.vpn_notif_text))
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_stat_shield)
             .setOngoing(true)
             .build()
 
