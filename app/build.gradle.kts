@@ -33,6 +33,8 @@ android {
 
     buildFeatures {
         viewBinding = true
+        // BuildConfig.DEBUG gates sensitive detail logging (see PrivacyLog); must be generated.
+        buildConfig = true
     }
 
     compileOptions {
@@ -42,6 +44,12 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+    }
+
+    testOptions {
+        // JVM unit tests touch android.util.Log indirectly (via classes under test); returning
+        // defaults for un-mocked framework calls keeps those tests from throwing "not mocked".
+        unitTests.isReturnDefaultValues = true
     }
 }
 

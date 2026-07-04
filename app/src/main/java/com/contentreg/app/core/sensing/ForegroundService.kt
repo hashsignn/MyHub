@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.contentreg.app.core.data.di.ServiceLocator
 import com.contentreg.app.core.data.prefs.SettingsStore
+import com.contentreg.app.core.util.PrivacyLog
 import com.contentreg.app.feature1_doomscroll.budget.BudgetMath
 import com.contentreg.app.feature3_text.ScreenTextPipeline
 import com.contentreg.app.feature3_text.ScreenTextReader
@@ -193,7 +194,10 @@ class ForegroundService : AccessibilityService() {
         }
         val usable = snapshot.url != null || snapshot.pageText.length >= MIN_CONTENT_CHARS
         if (usable) {
-            Log.d(TAG, "M3.0 snapshot: pkg=$packageName url=${snapshot.url} textLen=${snapshot.pageText.length}")
+            // Non-sensitive telemetry stays in release; the actual URL is debug-only.
+            Log.d(TAG, "M3.0 snapshot: pkg=$packageName urlPresent=${snapshot.url != null} " +
+                "textLen=${snapshot.pageText.length}")
+            PrivacyLog.detail(TAG) { "M3.0 snapshot url=${snapshot.url}" }
             lastContentReadMs[packageName] = System.currentTimeMillis()
             ScreenTextPipeline.push(snapshot)
         }
@@ -215,7 +219,8 @@ class ForegroundService : AccessibilityService() {
                     className = event.className?.toString(),
                     timestampMs = now,
                 )
-                Log.d(TAG, "Foreground app: $packageName")
+                // Which app the user opened is behavioral data — debug-only.
+                PrivacyLog.detail(TAG) { "Foreground app: $packageName" }
                 // M3.0 — schedule a debounced text snapshot for classification.
                 scheduleTextRead(packageName)
             }

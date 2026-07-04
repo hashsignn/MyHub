@@ -1,6 +1,7 @@
 package com.contentreg.app.feature3_text.classifier
 
 import android.util.Log
+import com.contentreg.app.core.util.PrivacyLog
 import com.contentreg.app.feature3_text.ScreenSnapshot
 
 /**
@@ -30,8 +31,9 @@ class ContextClassifier(
         }.lowercase()
 
         val rulesResult = KeywordContextRules.score(text)
-        Log.d(TAG, "Rules: kw=${rulesResult.triggeredKeyword} " +
-            "conf=${"%.2f".format(rulesResult.confidence)} pkg=${snapshot.packageName}")
+        // Confidence is non-identifying; the matched keyword + package are debug-only.
+        Log.d(TAG, "Rules: conf=${"%.2f".format(rulesResult.confidence)}")
+        PrivacyLog.detail(TAG) { "Rules: kw=${rulesResult.triggeredKeyword} pkg=${snapshot.packageName}" }
 
         if (rulesResult.confidence >= KeywordContextRules.BLOCK_THRESHOLD) return rulesResult
         if (rulesResult.confidence < MODEL_HANDOFF_THRESHOLD) return rulesResult
