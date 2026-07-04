@@ -74,6 +74,21 @@
     <string name="onb_finish">Continue to app</string>
     <string name="m41_open_onboarding">Run setup / permissions</string>
 
+    <!-- M4.1 — onboarding: optional Device Admin step (Task 2). -->
+    <string name="onb_admin_title">Uninstall protection (optional)</string>
+    <string name="onb_admin_desc">Makes the app harder to delete: Android blocks uninstalling until you turn it off. Friction, not a lock — Safe Mode or a factory reset still work.</string>
+
+    <!-- Task 2 — Device Admin (anti-uninstall friction). -->
+    <string name="admin_label">ContentReg protection</string>
+    <string name="admin_description">While active, blocks the app from being uninstalled until you turn it off here — so a moment of weakness can\'t undo your setup.</string>
+    <string name="admin_add_explanation">Turn this on to make ContentReg harder to remove. While active, Android won\'t let the app be uninstalled until you deactivate it — here in the app or in Settings. You can turn it off at any time. This does not lock your phone or read anything.</string>
+    <string name="admin_disable_warning">Turning this off removes ContentReg\'s uninstall protection, so the app can then be deleted. Are you sure?</string>
+    <string name="settings_admin_heading">Uninstall protection</string>
+    <string name="admin_status_on">On — the app can\'t be uninstalled until you turn this off.</string>
+    <string name="admin_status_off">Off — the app can be uninstalled normally.</string>
+    <string name="admin_turn_on">Turn on uninstall protection</string>
+    <string name="admin_turn_off">Turn off uninstall protection</string>
+
     <!-- Bug #6 — VPN foreground service notification. -->
     <string name="vpn_notif_channel_name">URL filter</string>
     <string name="vpn_notif_title">URL filter active</string>

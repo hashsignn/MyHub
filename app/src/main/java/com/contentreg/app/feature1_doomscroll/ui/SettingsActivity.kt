@@ -12,6 +12,8 @@ import com.contentreg.app.core.data.prefs.SettingsStore
 import com.contentreg.app.databinding.ActivitySettingsBinding
 import com.contentreg.app.feature4_retention.AppDisguise
 import com.contentreg.app.feature4_retention.IconAliasController
+import com.contentreg.app.feature4_retention.admin.AdminController
+import com.contentreg.app.feature4_retention.admin.UninstallProtection
 import com.contentreg.app.feature4_retention.consent.ConsentActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -42,6 +44,7 @@ class SettingsActivity : AppCompatActivity() {
         setupBudgetSlider()
         setupDisguisePicker()
         setupPrivacy()
+        setupAdmin()
         setupAppList()
     }
 
@@ -53,6 +56,33 @@ class SettingsActivity : AppCompatActivity() {
                     .putExtra(ConsentActivity.EXTRA_REVIEW_MODE, true),
             )
         }
+    }
+
+    /** Task 2 — optional Device-Admin uninstall protection: reflect state + toggle on/off. */
+    private fun setupAdmin() {
+        binding.adminToggleButton.setOnClickListener {
+            when (UninstallProtection.toggleAction(AdminController.isActive(this))) {
+                UninstallProtection.AdminAction.ACTIVATE ->
+                    startActivity(AdminController.buildActivationIntent(this))
+                UninstallProtection.AdminAction.DEACTIVATE -> {
+                    AdminController.deactivate(this)
+                    refreshAdminUi()
+                }
+            }
+        }
+        refreshAdminUi()
+    }
+
+    private fun refreshAdminUi() {
+        val active = AdminController.isActive(this)
+        binding.adminStatusText.setText(if (active) R.string.admin_status_on else R.string.admin_status_off)
+        binding.adminToggleButton.setText(if (active) R.string.admin_turn_off else R.string.admin_turn_on)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Re-read admin state after returning from the system activation screen.
+        refreshAdminUi()
     }
 
     private fun setupDisguisePicker() {

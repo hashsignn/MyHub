@@ -144,6 +144,23 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
+        <!-- Task 2 — optional Device Admin: while active, Android blocks direct uninstall until it
+             is deactivated (friction, not a wall — Safe Mode / adb / factory reset still work).
+             Guarded by BIND_DEVICE_ADMIN so only the system binds it. -->
+        <receiver
+            android:name=".feature4_retention.admin.ContentRegDeviceAdminReceiver"
+            android:description="@string/admin_description"
+            android:label="@string/admin_label"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

@@ -11,6 +11,7 @@ import com.contentreg.app.core.permissions.PermissionRouter
 import com.contentreg.app.databinding.ActivityOnboardingBinding
 import com.contentreg.app.databinding.ItemOnboardingStepBinding
 import com.contentreg.app.feature2_url.FilterVpnService
+import com.contentreg.app.feature4_retention.admin.AdminController
 import com.contentreg.app.feature4_retention.consent.ConsentActivity
 import com.contentreg.app.feature4_retention.consent.ConsentGate
 import kotlinx.coroutines.flow.first
@@ -77,6 +78,7 @@ class OnboardingActivity : AppCompatActivity() {
                 val consent = PermissionRouter.prepareVpn(this)
                 if (consent != null) vpnConsentLauncher.launch(consent) else FilterVpnService.start(this)
             }
+            OnboardingStep.ADMIN -> startActivity(AdminController.buildActivationIntent(this))
         }
     }
 

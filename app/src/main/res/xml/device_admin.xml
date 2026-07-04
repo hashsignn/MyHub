@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Task 2 — device-admin policy metadata for ContentRegDeviceAdminReceiver.
+  No enforced policies are declared: simply being an ACTIVE device admin makes Android require
+  deactivation before the app can be uninstalled, which is all the anti-uninstall friction needs.
+  We deliberately do NOT request force-lock, wipe-data, password policies, etc.
+-->
+<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-policies />
+</device-admin>
