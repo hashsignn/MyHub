@@ -17,6 +17,8 @@ import com.contentreg.app.feature1_doomscroll.budget.BudgetMath
 import com.contentreg.app.feature1_doomscroll.ui.SettingsActivity
 import com.contentreg.app.feature2_url.FilterVpnService
 import com.contentreg.app.feature2_url.registry.BlockEntrySource
+import com.contentreg.app.feature4_retention.consent.ConsentActivity
+import com.contentreg.app.feature4_retention.consent.ConsentGate
 import com.contentreg.app.feature4_retention.onboarding.OnboardingActivity
 import com.contentreg.app.feature4_retention.stats.DashboardActivity
 import kotlinx.coroutines.flow.combine
@@ -63,9 +65,14 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, DashboardActivity::class.java))
         }
 
-        // M4.1 — show onboarding once, on first launch, before the user has completed it.
+        // Task 1 — gate on prominent-disclosure consent BEFORE onboarding. Consent must precede any
+        // sensitive access, so it is the first screen on a fresh install (and re-appears if the
+        // disclosure text is versioned up). Only once consented does onboarding show.
         lifecycleScope.launch {
-            if (!ServiceLocator.settingsStore.onboardingComplete.first()) {
+            val store = ServiceLocator.settingsStore
+            if (ConsentGate.needsConsent(store.consentVersion.first())) {
+                startActivity(Intent(this@MainActivity, ConsentActivity::class.java))
+            } else if (!store.onboardingComplete.first()) {
                 startActivity(Intent(this@MainActivity, OnboardingActivity::class.java))
             }
         }

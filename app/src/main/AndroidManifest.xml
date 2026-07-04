@@ -93,6 +93,13 @@
             android:label="@string/settings_title"
             android:parentActivityName=".MainActivity" />
 
+        <!-- Task 1 — prominent disclosure & consent, shown before onboarding / any sensitive access. -->
+        <activity
+            android:name=".feature4_retention.consent.ConsentActivity"
+            android:exported="false"
+            android:label="@string/consent_heading"
+            android:parentActivityName=".MainActivity" />
+
         <!-- M4.1 — permission onboarding. -->
         <activity
             android:name=".feature4_retention.onboarding.OnboardingActivity"

@@ -68,6 +68,19 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { prefs -> prefs[KEY_ONBOARDING_COMPLETE] = complete }
     }
 
+    /**
+     * Which version of the prominent-disclosure text the user has consented to (Task 1). 0 = none.
+     * Compared against [com.contentreg.app.feature4_retention.consent.ConsentGate.CURRENT_CONSENT_VERSION]
+     * so bumping the disclosure copy re-prompts for fresh consent.
+     */
+    val consentVersion: Flow<Int> = context.dataStore.data.map { prefs ->
+        prefs[KEY_CONSENT_VERSION] ?: 0
+    }
+
+    suspend fun setConsentVersion(version: Int) {
+        context.dataStore.edit { prefs -> prefs[KEY_CONSENT_VERSION] = version }
+    }
+
     companion object {
         const val DEFAULT_BUDGET_MINUTES = 5
         const val MIN_BUDGET_MINUTES = 1
@@ -77,6 +90,7 @@ class SettingsStore(private val context: Context) {
         private val KEY_BLOCKLIST_SEED_VERSION = intPreferencesKey("blocklist_seed_version")
         private val KEY_APP_DISGUISE = stringPreferencesKey("app_disguise")
         private val KEY_ONBOARDING_COMPLETE = booleanPreferencesKey("onboarding_complete")
+        private val KEY_CONSENT_VERSION = intPreferencesKey("consent_version")
 
         /** Convenience: minutes → milliseconds. */
         fun minutesToMs(minutes: Int): Long = minutes.toLong() * 60L * 1000L

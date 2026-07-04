@@ -12,6 +12,7 @@ import com.contentreg.app.core.data.prefs.SettingsStore
 import com.contentreg.app.databinding.ActivitySettingsBinding
 import com.contentreg.app.feature4_retention.AppDisguise
 import com.contentreg.app.feature4_retention.IconAliasController
+import com.contentreg.app.feature4_retention.consent.ConsentActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -40,7 +41,18 @@ class SettingsActivity : AppCompatActivity() {
 
         setupBudgetSlider()
         setupDisguisePicker()
+        setupPrivacy()
         setupAppList()
+    }
+
+    /** Task 1 — re-view the prominent-disclosure text on demand (read-only). */
+    private fun setupPrivacy() {
+        binding.viewDisclosureButton.setOnClickListener {
+            startActivity(
+                Intent(this, ConsentActivity::class.java)
+                    .putExtra(ConsentActivity.EXTRA_REVIEW_MODE, true),
+            )
+        }
     }
 
     private fun setupDisguisePicker() {

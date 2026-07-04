@@ -1,5 +1,6 @@
 package com.contentreg.app.feature4_retention.onboarding
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -10,6 +11,9 @@ import com.contentreg.app.core.permissions.PermissionRouter
 import com.contentreg.app.databinding.ActivityOnboardingBinding
 import com.contentreg.app.databinding.ItemOnboardingStepBinding
 import com.contentreg.app.feature2_url.FilterVpnService
+import com.contentreg.app.feature4_retention.consent.ConsentActivity
+import com.contentreg.app.feature4_retention.consent.ConsentGate
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -46,6 +50,15 @@ class OnboardingActivity : AppCompatActivity() {
         binding.finishButton.setOnClickListener {
             lifecycleScope.launch {
                 ServiceLocator.settingsStore.setOnboardingComplete(true)
+                finish()
+            }
+        }
+
+        // Task 1 — belt-and-suspenders consent gate: the permission-grant steps must be unreachable
+        // without consent. If this screen is ever reached un-consented, bounce to the disclosure.
+        lifecycleScope.launch {
+            if (ConsentGate.needsConsent(ServiceLocator.settingsStore.consentVersion.first())) {
+                startActivity(Intent(this@OnboardingActivity, ConsentActivity::class.java))
                 finish()
             }
         }

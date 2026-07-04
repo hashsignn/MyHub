@@ -4,7 +4,7 @@
 
     <!-- M1.0 — accessibility service metadata (shown on the system Accessibility screen). -->
     <string name="accessibility_service_label">ContentReg sensing</string>
-    <string name="accessibility_service_description">Detects which app is in the foreground so ContentReg can track feed usage and (later) block content. Runs entirely on-device — nothing is sent anywhere.</string>
+    <string name="accessibility_service_description">Lets ContentReg see which app is in the foreground, detect scrolling, and read on-screen text — used to enforce your feed-time budget and cover explicit content with a block screen. All processing happens on your device; screen contents are never sent anywhere.</string>
 
     <!-- M1.0 — main screen UI. -->
     <string name="m10_enable_accessibility">Enable accessibility access</string>
@@ -78,6 +78,15 @@
     <string name="vpn_notif_channel_name">URL filter</string>
     <string name="vpn_notif_title">URL filter active</string>
     <string name="vpn_notif_text">Blocking explicit domains on-device.</string>
+
+    <!-- Task 1 — prominent disclosure & consent (shown before any sensitive access). -->
+    <string name="consent_heading">Before you start: how ContentReg works</string>
+    <string name="consent_body">ContentReg helps you cut back on doomscrolling and avoid explicit content. To do that, it watches what happens on your screen. Please read this before turning anything on.\n\n<b>WHAT IT ACCESSES</b>\n• The app currently in the foreground, and when you scroll in it.\n• The text and links visible on your screen, including your browser\'s address bar.\n• The domain names (e.g. example.com) your device looks up while the URL filter is on.\n\n<b>WHY</b>\n• To measure time spent scrolling feed apps and enforce your hourly budget.\n• To detect explicit on-screen text and cover it with a block screen.\n• To block domains you choose to filter.\n\n<b>WHERE YOUR DATA GOES</b>\n• All of this is analysed <b>on your device</b>. The text on your screen and your browsing history are never uploaded, shared, or sent to us or any server.\n• One honest exception: to filter domains, the app runs a local VPN that inspects DNS lookups. Allowed lookups are forwarded to a DNS resolver — your device\'s normal resolver, or a public one such as 8.8.8.8 — exactly as they would be without this app. That is ordinary internet networking, not us collecting your history, and the app keeps no remote log of it.\n\n<b>YOU\'RE IN CONTROL</b>\n• Accessibility, Display-over-other-apps and VPN are granted by you and can be turned off at any time — in Android Settings or here in the app. Turning one off disables that feature.\n\nBy tapping \"I understand &amp; agree\", you consent to the on-device monitoring described above.</string>
+    <string name="consent_agree">I understand &amp; agree</string>
+    <string name="consent_decline">Not now</string>
+    <string name="consent_close">Close</string>
+    <string name="settings_privacy_heading">Data &amp; privacy</string>
+    <string name="settings_view_disclosure">View data &amp; privacy disclosure</string>
 
     <!-- M4.2 — dashboard. -->
     <string name="m42_open_dashboard">Stats dashboard</string>
