@@ -86,7 +86,7 @@
             </intent-filter>
         </activity-alias>
 
-        <!-- M1.4 — budget length + target-app picker. -->
+        <!-- Settings — reel toggles, disguise, uninstall protection, custom shortcut, privacy. -->
         <activity
             android:name=".feature1_doomscroll.ui.SettingsActivity"
             android:exported="false"

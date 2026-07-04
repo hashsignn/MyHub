@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- M0.0–M1.3 — dev dashboard: permissions, live sensing readouts, budget, and test controls.
-     A ScrollView keeps it usable as more rows are added; a polished dashboard arrives in M4.2. -->
+<!-- Dev harness: permission state, the live foreground package, and URL-filter controls.
+     A ScrollView keeps it usable; the polished stats live in DashboardActivity. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"

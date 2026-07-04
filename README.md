@@ -3,7 +3,8 @@
 **Scope of this document:** the *features phase only* — a normal Android app written in Kotlin, installed and granted strong permissions by the user. This is **not** the custom-ROM phase. The ROM port is a separate, later effort that reuses the validated code from this phase. Nothing here covers product vision, market, or positioning — this is the technical build path and its milestones.
  
 **Three features being built (in this order):**
-1. Doomscroll detection + combined cross-app time budget + block overlay
+1. Doomscroll prevention — **per-surface reel/short-video blocking** + block overlay (originally a
+   cross-app time budget; redesigned to block the Reels/Shorts tab itself — see ADR 0005)
 2. URL registry + blocking
 3. On-screen text reading + context-aware blocking via overlay
 **Core principle of the order:** each milestone produces something that *runs and is testable on a real phone* before the next one starts. Features 2 and 3 both depend on infrastructure built in Feature 1. Do not start them in parallel.
@@ -29,6 +30,11 @@ This phase produces no product. Its only job is a working build pipeline. It is 
 ## Phase 1 — Doomscroll feature (the foundation)
  
 This is the backbone. The Accessibility Service built here is the same sensing layer that Features 2 and 3 read from. Build it well.
+
+> **Update — reel-blocking replaces the time budget (ADR 0005).** M1.0/M1.1 sensing and M1.3's block
+> overlay are built and reused, but M1.2's per-hour *time budget* was replaced by **per-surface reel
+> blocking**: detect the Reels/Shorts surface and block only that tab. The milestone text below is
+> the original plan; `docs/decisions/0005-reel-blocking.md` records the change and its limits.
  
 ### M1.0 — Foreground app detection
 - **Goal:** the app knows which app is currently in the foreground.

@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * M1.0 — single source of truth for "what app is in the foreground right now".
  *
- * [ForegroundService] writes to this whenever the active window changes; UI and (later) the
- * budget tracker (M1.2) and text reader (M3.0) read from it. It is an `object` because there is
+ * [ForegroundService] writes to this whenever the active window changes; the UI, the reel check,
+ * and the text reader (M3.0) read from it. It is an `object` because there is
  * exactly one foreground app on the device at any moment, and the AccessibilityService is itself a
  * process-wide singleton — so a single in-memory holder is the natural fit. State here is
  * intentionally *not* persisted: it is live, moment-to-moment signal, rebuilt the instant the

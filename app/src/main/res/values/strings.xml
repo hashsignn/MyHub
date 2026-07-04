@@ -1,10 +1,10 @@
 <resources>
     <string name="app_name">ContentReg</string>
-    <string name="phase0_status">Phase 0 — build pipeline OK.\nReady for Phase 1 (sensing layer).</string>
+    <string name="phase0_status">ContentReg — reel &amp; content blocking. Grant the permissions below to activate.</string>
 
     <!-- M1.0 — accessibility service metadata (shown on the system Accessibility screen). -->
     <string name="accessibility_service_label">ContentReg sensing</string>
-    <string name="accessibility_service_description">Lets ContentReg see which app is in the foreground, detect scrolling, and read on-screen text — used to enforce your feed-time budget and cover explicit content with a block screen. All processing happens on your device; screen contents are never sent anywhere.</string>
+    <string name="accessibility_service_description">Lets ContentReg see which app is in the foreground, which tab is open, and the on-screen text — used to block short-video (Reels/Shorts) feeds and cover explicit content with a block screen. All processing happens on your device; screen contents are never sent anywhere.</string>
 
     <!-- M1.0 — main screen UI. -->
     <string name="m10_enable_accessibility">Enable accessibility access</string>
@@ -55,9 +55,9 @@
     <string name="onb_heading">Set up ContentReg</string>
     <string name="onb_subtitle">Grant these so the app can sense, block, and filter. You can change them anytime in system settings.</string>
     <string name="onb_a11y_title">Accessibility access</string>
-    <string name="onb_a11y_desc">Detects the foreground app and scrolling (and reads on-screen text later).</string>
+    <string name="onb_a11y_desc">Detects the foreground app and which tab is open (e.g. a Reels/Shorts feed), and reads on-screen text.</string>
     <string name="onb_overlay_title">Display over other apps</string>
-    <string name="onb_overlay_desc">Draws the block screen over a feed when your time budget runs out.</string>
+    <string name="onb_overlay_desc">Draws the block screen over the Reels/Shorts tab (and blocked pages).</string>
     <string name="onb_vpn_title">URL filter (VPN) — optional</string>
     <string name="onb_vpn_desc">Blocks explicit domains on-device. No traffic leaves your phone.</string>
     <string name="onb_granted">Granted ✓</string>
@@ -97,7 +97,7 @@
 
     <!-- Task 1 — prominent disclosure & consent (shown before any sensitive access). -->
     <string name="consent_heading">Before you start: how ContentReg works</string>
-    <string name="consent_body">ContentReg helps you cut back on doomscrolling and avoid explicit content. To do that, it watches what happens on your screen. Please read this before turning anything on.\n\n<b>WHAT IT ACCESSES</b>\n• The app currently in the foreground, and when you scroll in it.\n• The text and links visible on your screen, including your browser\'s address bar.\n• The domain names (e.g. example.com) your device looks up while the URL filter is on.\n\n<b>WHY</b>\n• To measure time spent scrolling feed apps and enforce your hourly budget.\n• To detect explicit on-screen text and cover it with a block screen.\n• To block domains you choose to filter.\n\n<b>WHERE YOUR DATA GOES</b>\n• All of this is analysed <b>on your device</b>. The text on your screen and your browsing history are never uploaded, shared, or sent to us or any server.\n• One honest exception: to filter domains, the app runs a local VPN that inspects DNS lookups. Allowed lookups are forwarded to a DNS resolver — your device\'s normal resolver, or a public one such as 8.8.8.8 — exactly as they would be without this app. That is ordinary internet networking, not us collecting your history, and the app keeps no remote log of it.\n\n<b>YOU\'RE IN CONTROL</b>\n• Accessibility, Display-over-other-apps and VPN are granted by you and can be turned off at any time — in Android Settings or here in the app. Turning one off disables that feature.\n\nBy tapping \"I understand &amp; agree\", you consent to the on-device monitoring described above.</string>
+    <string name="consent_body">ContentReg helps you cut back on doomscrolling and avoid explicit content. To do that, it watches what happens on your screen. Please read this before turning anything on.\n\n<b>WHAT IT ACCESSES</b>\n• The app currently in the foreground and which tab is open (e.g. a Reels/Shorts feed).\n• The text and links visible on your screen, including your browser\'s address bar.\n• The domain names (e.g. example.com) your device looks up while the URL filter is on.\n\n<b>WHY</b>\n• To detect when a short-video (Reels/Shorts) feed is open and block that tab.\n• To detect explicit on-screen text and cover it with a block screen.\n• To block domains you choose to filter.\n\n<b>WHERE YOUR DATA GOES</b>\n• All of this is analysed <b>on your device</b>. The text on your screen and your browsing history are never uploaded, shared, or sent to us or any server.\n• One honest exception: to filter domains, the app runs a local VPN that inspects DNS lookups. Allowed lookups are forwarded to a DNS resolver — your device\'s normal resolver, or a public one such as 8.8.8.8 — exactly as they would be without this app. That is ordinary internet networking, not us collecting your history, and the app keeps no remote log of it.\n\n<b>YOU\'RE IN CONTROL</b>\n• Accessibility, Display-over-other-apps and VPN are granted by you and can be turned off at any time — in Android Settings or here in the app. Turning one off disables that feature.\n\nBy tapping \"I understand &amp; agree\", you consent to the on-device monitoring described above.</string>
     <string name="consent_agree">I understand &amp; agree</string>
     <string name="consent_decline">Not now</string>
     <string name="consent_close">Close</string>

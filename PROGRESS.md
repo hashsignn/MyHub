@@ -20,6 +20,16 @@ Kept in sync as each milestone lands. Legend: ✅ done · 🚧 in progress · �
 
 > **Phase 1 complete — first shippable prototype.** Sensing (M1.0/M1.1) → budget+persistence (M1.2) → block overlay (M1.3) → reset+settings (M1.4). Everything below is additive.
 
+> ⚠️ **Phase 1 redesigned — reel-blocking replaces the time budget (ADR 0005).** The per-hour time
+> budget was removed in favor of **per-surface reel blocking**: the accessibility service detects the
+> Reels/Shorts surface (Instagram, YouTube, Facebook; TikTok whole-app) and blocks *only that tab*,
+> leaving the app's other tabs usable. `ReelDetector`/`ReelApps` (pure, tested) + a bounded live
+> view-id scan drive the reused overlay (now reason-based: REEL + M3 TEXT). Removed: BudgetMath/
+> State/Tracker/DAO/Repository, HourWindowResetter, ResetWorker (WorkManager), ScrollMonitor,
+> TargetApps, AppListAdapter; Room dropped `budget_state` (v3). Settings gained per-app reel toggles.
+> **Detection signatures are app-version-specific and need on-device tuning** (Snapchat/canvas apps
+> are a known gap). M1.0/M1.3 sensing + overlay infra are reused unchanged.
+
 ## Phase 2 — URL registry + blocking
 | Milestone | Status | Notes |
 |---|---|---|

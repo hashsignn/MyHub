@@ -12,7 +12,8 @@ package com.contentreg.app.feature4_retention.consent
 object ConsentGate {
 
     /** Bump this whenever the disclosure copy (strings.consent_body) changes materially. */
-    const val CURRENT_CONSENT_VERSION = 1
+    // v2: reel-blocking replaced the time-budget wording in the disclosure.
+    const val CURRENT_CONSENT_VERSION = 2
 
     /**
      * True when consent must be (re)collected: the stored version is absent (0) or older than the

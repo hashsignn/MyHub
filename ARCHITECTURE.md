@@ -8,6 +8,11 @@ AccessibilityService · VpnService · WindowManager overlays · LiteRT/ONNX (lat
 
 **Package root:** `com.contentreg.app`
 
+> **Note — Phase 1 redesigned (ADR 0005).** The time-budget files below (`budget/`, `ResetWorker`,
+> `ScrollMonitor`, `TargetApps`, `AppListAdapter`) were **removed**; Phase 1 now blocks the reel
+> surface instead of limiting time. New: `feature1_doomscroll/reels/` (`ReelDetector`, `ReelRules`).
+> The overlay is reason-based (reel + text). Treat budget entries in the tree below as historical.
+
 ---
 
 ## Top-level project
