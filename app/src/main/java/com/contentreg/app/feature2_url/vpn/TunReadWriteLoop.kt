@@ -1,6 +1,7 @@
 package com.contentreg.app.feature2_url.vpn
 
 import android.util.Log
+import com.contentreg.app.core.util.PrivacyLog
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
@@ -44,21 +45,33 @@ class TunReadWriteLoop(
             if (read <= 0) continue
 
             val packet = buffer.copyOf(read)
-            val dns = DnsPacketHandler.extractDnsPayload(packet) ?: continue
-            val name = DnsPacketHandler.parseFirstQuestionName(dns)
-
-            val responseDns = if (name != null && isHostBlocked(name)) {
-                Log.d(TAG, "Blocking DNS for $name")
-                DnsPacketHandler.buildBlockedDnsResponse(dns)
-            } else {
-                forwardUpstream(dns) ?: continue
+            // A single malformed/oversized packet must never tear down the whole filter loop:
+            // isolate per-packet parsing/building so a parse throw just drops that one packet.
+            try {
+                handlePacket(packet)
+            } catch (e: Exception) {
+                Log.w(TAG, "Dropped a packet after processing error: ${e.javaClass.simpleName}")
             }
-
-            runCatching {
-                val reply = DnsPacketHandler.buildResponsePacket(packet, responseDns)
-                synchronized(tunOutput) { tunOutput.write(reply) }
-            }.onFailure { Log.w(TAG, "Failed writing DNS reply", it) }
         }
+    }
+
+    /** Parses one IP packet, answers NXDOMAIN for blocked hosts or forwards upstream, writes reply. */
+    private fun handlePacket(packet: ByteArray) {
+        val dns = DnsPacketHandler.extractDnsPayload(packet) ?: return
+        val name = DnsPacketHandler.parseFirstQuestionName(dns)
+
+        val responseDns = if (name != null && isHostBlocked(name)) {
+            // The visited domain is private browsing data — debug-only.
+            PrivacyLog.detail(TAG) { "Blocking DNS for $name" }
+            DnsPacketHandler.buildBlockedDnsResponse(dns)
+        } else {
+            forwardUpstream(dns) ?: return
+        }
+
+        runCatching {
+            val reply = DnsPacketHandler.buildResponsePacket(packet, responseDns)
+            synchronized(tunOutput) { tunOutput.write(reply) }
+        }.onFailure { Log.w(TAG, "Failed writing DNS reply", it) }
     }
 
     /** Tries each upstream resolver in order; returns the first reply, or null if all fail. */
