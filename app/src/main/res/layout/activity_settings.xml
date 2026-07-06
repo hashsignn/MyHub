@@ -46,6 +46,12 @@
             android:text="@string/reel_app_facebook" />
 
         <CheckBox
+            android:id="@+id/reelSnapchat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/reel_app_snapchat" />
+
+        <CheckBox
             android:id="@+id/reelTiktok"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

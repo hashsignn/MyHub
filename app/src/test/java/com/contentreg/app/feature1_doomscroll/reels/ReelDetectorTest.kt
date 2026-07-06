@@ -44,6 +44,26 @@ class ReelDetectorTest {
         assertFalse(ReelDetector.isReelSurface("com.google.android.youtube", ids, all))
     }
 
+    // ── Snapchat (per-surface, best-effort / unverified markers) ────────────────────────────
+
+    @Test
+    fun `snapchat spotlight viewer is detected as a reel surface`() {
+        val ids = listOf("com.snapchat.android:id/spotlight_view_pager")
+        assertTrue(ReelDetector.isReelSurface("com.snapchat.android", ids, all))
+    }
+
+    @Test
+    fun `snapchat non-spotlight surfaces are not reel surfaces`() {
+        // Chat, and crucially the persistent nav-bar Spotlight tab BUTTON, must not trigger a block —
+        // otherwise the whole app would be blocked, not just the Spotlight feed.
+        val ids = listOf(
+            "com.snapchat.android:id/ngs_navigation_bar",
+            "com.snapchat.android:id/spotlight_tab_icon", // nav button, present on every screen
+            "com.snapchat.android:id/chat_list",
+        )
+        assertFalse(ReelDetector.isReelSurface("com.snapchat.android", ids, all))
+    }
+
     // ── TikTok (whole-app) ──────────────────────────────────────────────────────────────────
 
     @Test

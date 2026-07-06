@@ -36,12 +36,18 @@ WorkManager, ScrollMonitor, TargetApps) is removed, and Room drops `budget_state
 - **Signatures are app-version-specific.** The view-id markers are the app's internal names for the
   reel viewer; a redesign can rename them and silently break detection. They are centralized in
   `ReelApps` for one-file tuning, and **must be verified on-device** per app.
-- **Canvas/SurfaceView apps are opaque.** Snapchat Spotlight (and any app rendering video without an
-  accessibility tree) can't be detected this way — a documented gap, not in the initial set.
+- **Canvas/SurfaceView apps are opaque.** Snapchat renders Spotlight on a SurfaceView and obfuscates
+  its ids, so its tree is unusually sparse. A **best-effort per-tab rule** now targets the Spotlight
+  viewer container (`spotlight_view`/`_recycler`/`_pager`), chosen to be viewer-specific so the worst
+  case is under-blocking rather than false-blocking Chat — but the markers are **UNVERIFIED** and need
+  an on-device Spotlight dump to confirm. If no Spotlight-specific id is exposed at all, detection
+  simply never fires for Snapchat: the inherent limit of view-id detection against canvas apps.
 - **Facebook is best-effort.** FB's accessibility tree is sparse; its markers are the most likely to
   need on-device tuning.
-- **Latency.** Detection runs debounced (~250 ms) on window/content changes, so the block appears a
-  fraction of a second after the reel surface opens — acceptable, and avoids spinning the CPU.
+- **Latency.** Detection runs on a fixed ~700 ms ticker (a *playing* reel fires content-changed events
+  continuously, which would starve a pure debounce), with clear-side hysteresis so a single dropped
+  marker frame doesn't flap the overlay. The block appears a fraction of a second after the reel
+  surface opens — acceptable, and the bounded scan avoids spinning the CPU.
 
 ## Testing
 

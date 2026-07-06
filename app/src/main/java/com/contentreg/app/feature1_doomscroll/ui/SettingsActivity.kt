@@ -42,6 +42,7 @@ class SettingsActivity : AppCompatActivity() {
             binding.reelInstagram to setOf("com.instagram.android"),
             binding.reelYoutube to setOf("com.google.android.youtube"),
             binding.reelFacebook to setOf("com.facebook.katana"),
+            binding.reelSnapchat to setOf("com.snapchat.android"),
             binding.reelTiktok to setOf("com.zhiliaoapp.musically", "com.ss.android.ugc.trill"),
         )
     }

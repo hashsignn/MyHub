@@ -27,8 +27,9 @@ Kept in sync as each milestone lands. Legend: ✅ done · 🚧 in progress · �
 > view-id scan drive the reused overlay (now reason-based: REEL + M3 TEXT). Removed: BudgetMath/
 > State/Tracker/DAO/Repository, HourWindowResetter, ResetWorker (WorkManager), ScrollMonitor,
 > TargetApps, AppListAdapter; Room dropped `budget_state` (v3). Settings gained per-app reel toggles.
-> **Detection signatures are app-version-specific and need on-device tuning** (Snapchat/canvas apps
-> are a known gap). M1.0/M1.3 sensing + overlay infra are reused unchanged.
+> **Detection signatures are app-version-specific and need on-device tuning.** Snapchat Spotlight now
+> has a best-effort per-tab rule + settings toggle (UNVERIFIED markers — canvas/SurfaceView rendering
+> may expose no usable id; see ADR 0005). M1.0/M1.3 sensing + overlay infra are reused unchanged.
 
 ## Phase 2 — URL registry + blocking
 | Milestone | Status | Notes |

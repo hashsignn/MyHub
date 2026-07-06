@@ -33,6 +33,7 @@
     <string name="reel_app_instagram">Instagram Reels</string>
     <string name="reel_app_youtube">YouTube Shorts</string>
     <string name="reel_app_facebook">Facebook Reels</string>
+    <string name="reel_app_snapchat">Snapchat Spotlight (experimental)</string>
     <string name="reel_app_tiktok">TikTok (whole app)</string>
 
     <!-- M2.1 — URL filter (VPN) controls. -->
