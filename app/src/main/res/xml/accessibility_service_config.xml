@@ -3,15 +3,17 @@
   Capabilities/event types for ForegroundService.
 
   - typeWindowStateChanged: foreground-app detection + reel-tab switches.
-  - typeWindowContentChanged: in-app content settle → reel re-check + M3.0 text read.
+  - typeWindowContentChanged: in-app content settle → M3.0 text read (reel detection runs on a timer).
   - canRetrieveWindowContent + flagRetrieveInteractiveWindows: node-tree reads (reel view-ids, text).
+  - flagReportViewIds: REQUIRED for getViewIdResourceName() to return non-null — reel detection
+    matches on view-ids (clips_viewer, reel_recycler, …), so without this the ids are all null.
   - No packageNames filter: we must observe every app to know what is in the foreground.
   - notificationTimeout throttles event delivery to limit churn on the hot path.
 -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
-    android:accessibilityFlags="flagRetrieveInteractiveWindows|flagIncludeNotImportantViews"
+    android:accessibilityFlags="flagRetrieveInteractiveWindows|flagIncludeNotImportantViews|flagReportViewIds"
     android:canRetrieveWindowContent="true"
     android:description="@string/accessibility_service_description"
     android:notificationTimeout="100" />

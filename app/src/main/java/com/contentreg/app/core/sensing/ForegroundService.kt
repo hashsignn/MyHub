@@ -19,6 +19,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -41,7 +42,6 @@ class ForegroundService : AccessibilityService() {
     private var serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private var textReadJob: Job? = null
-    private var reelCheckJob: Job? = null
     private val lastContentReadMs = ConcurrentHashMap<String, Long>()
 
     // Which reel apps are actively blocked (synced live from settings). Default: all supported.
@@ -50,16 +50,20 @@ class ForegroundService : AccessibilityService() {
     // Last reel-block state, so each block is counted once for stats.
     @Volatile private var lastReelBlocked = false
 
+    // Consecutive non-reel reads while a block is up — hysteresis to avoid flicker on a playing reel
+    // that momentarily hides its markers between frames.
+    @Volatile private var reelClearStreak = 0
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         // Cancel any coroutines from a prior bind, then start fresh.
         serviceScope.cancel()
         serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         textReadJob = null
-        reelCheckJob = null
         lastReelBlocked = false
         Log.i(TAG, "Accessibility service connected; foreground sensing active.")
         startReelSettingsSync()
+        startReelTicker()
         startTextPipeline()
     }
 
@@ -81,25 +85,48 @@ class ForegroundService : AccessibilityService() {
 
     // ── Reel blocking ─────────────────────────────────────────────────────────────────────────
 
-    /** Debounced so a burst of content-changed events collapses into one bounded tree scan. */
-    private fun scheduleReelCheck() {
-        reelCheckJob?.cancel()
-        reelCheckJob = serviceScope.launch {
-            delay(REEL_CHECK_DELAY_MS)
-            evaluateReelBlock()
+    /**
+     * Periodic reel re-evaluation. A *playing* reel fires content-changed events continuously, which
+     * would starve a pure debounce (it never settles and the check is perpetually cancelled), so we
+     * re-check on a fixed cadence instead. The scan only walks the tree while a per-tab reel app is
+     * foreground; otherwise it just clears the reel reason cheaply.
+     */
+    private fun startReelTicker() {
+        serviceScope.launch {
+            while (isActive) {
+                evaluateReelBlock()
+                delay(REEL_TICK_MS)
+            }
         }
     }
 
     private suspend fun evaluateReelBlock() {
-        val pkg = ForegroundAppTracker.currentPackage
-        val blocked = when {
+        val eval = withContext(Dispatchers.Main) { scanForeground() }
+            ?: return // no windows this tick — leave the overlay state unchanged (avoids flicker)
+
+        val pkg = eval.first
+        val rawBlocked = when {
             pkg == null || pkg !in enabledReelApps -> false
             ReelDetector.isWholeAppBlock(pkg) -> true
+            else -> ReelDetector.isReelSurface(pkg, eval.second, enabledReelApps)
+        }
+        val onReelApp = pkg != null && pkg in enabledReelApps
+
+        // Hysteresis on the *clear* side only: a playing reel occasionally drops its detection
+        // markers for a single frame, which a raw read would treat as "not a reel" and flap the
+        // overlay off for one tick. So once blocking, require REEL_CLEAR_STREAK consecutive negative
+        // reads before lifting — but ONLY while still on the reel app. Leaving the reel app lifts
+        // immediately, so we never hold the block over an unrelated surface.
+        val blocked = when {
+            rawBlocked -> { reelClearStreak = 0; true }
+            !lastReelBlocked -> false
+            !onReelApp -> { reelClearStreak = 0; false }
             else -> {
-                val ids = withContext(Dispatchers.Main) { collectViewIds(getRootInActiveWindow()) }
-                ReelDetector.isReelSurface(pkg, ids, enabledReelApps)
+                reelClearStreak++
+                if (reelClearStreak >= REEL_CLEAR_STREAK) { reelClearStreak = 0; false } else true
             }
         }
+
         withContext(Dispatchers.Main) {
             ServiceLocator.overlayManager.setReason(OverlayManager.BlockReason.REEL, blocked)
         }
@@ -111,27 +138,56 @@ class ForegroundService : AccessibilityService() {
     }
 
     /**
-     * Bounded DFS collecting view-id resource names from the active window, for reel detection.
-     * Capped at [REEL_SCAN_MAX_NODES]; recycles the children it fetches. Main thread only.
+     * Returns the foreground app's package and the view-ids visible across ALL of its windows, or
+     * null if there are no windows. We scan every window of the foreground package — not just
+     * `getRootInActiveWindow()` — because apps like YouTube keep the reel content in a window that
+     * isn't the input-focused one, so the active root alone is empty. Main thread only.
      */
-    private fun collectViewIds(root: AccessibilityNodeInfo?): List<String> {
-        root ?: return emptyList()
-        val ids = ArrayList<String>(64)
-        val counter = intArrayOf(0)
-        fun walk(node: AccessibilityNodeInfo) {
-            counter[0]++
-            node.viewIdResourceName?.let { if (it.isNotEmpty()) ids.add(it) }
-            if (counter[0] >= REEL_SCAN_MAX_NODES) return
-            for (i in 0 until node.childCount) {
-                val child = node.getChild(i) ?: continue
-                walk(child)
-                child.recycle()
-                if (counter[0] >= REEL_SCAN_MAX_NODES) return
-            }
+    private fun scanForeground(): Pair<String?, List<String>>? {
+        val wins = windows ?: return null
+        if (wins.isEmpty()) return null
+
+        // Foreground package = the active window's package (fallback: the active-window root).
+        val activePkg = wins.firstOrNull { it.isActive }?.let { w ->
+            val r = w.root
+            val p = r?.packageName?.toString()
+            r?.recycle()
+            p
+        } ?: getRootInActiveWindow()?.let { r ->
+            val p = r.packageName?.toString(); r.recycle(); p
         }
-        walk(root)
-        root.recycle()
-        return ids
+
+        // Only a per-tab reel app needs the (more expensive) view-id scan.
+        if (activePkg == null || activePkg !in enabledReelApps || ReelDetector.isWholeAppBlock(activePkg)) {
+            return activePkg to emptyList()
+        }
+        val ids = ArrayList<String>(128)
+        val counter = intArrayOf(0)
+        for (w in wins) {
+            val root = w.root ?: continue
+            if (root.packageName?.toString() == activePkg) {
+                root.refresh()
+                collectInto(root, ids, counter)
+            }
+            root.recycle()
+        }
+        return activePkg to ids
+    }
+
+    /**
+     * Bounded DFS collecting view-id resource names into [ids]. Capped at [REEL_SCAN_MAX_NODES];
+     * recycles the children it fetches but NOT [node] (the caller owns each window root).
+     */
+    private fun collectInto(node: AccessibilityNodeInfo, ids: MutableList<String>, counter: IntArray) {
+        counter[0]++
+        node.viewIdResourceName?.let { if (it.isNotEmpty()) ids.add(it) }
+        if (counter[0] >= REEL_SCAN_MAX_NODES) return
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            collectInto(child, ids, counter)
+            child.recycle()
+            if (counter[0] >= REEL_SCAN_MAX_NODES) return
+        }
     }
 
     // ── M3.0 on-screen text read ───────────────────────────────────────────────────────────────
@@ -184,15 +240,16 @@ class ForegroundService : AccessibilityService() {
                     timestampMs = now,
                 )
                 PrivacyLog.detail(TAG) { "Foreground app: $packageName" }
-                scheduleReelCheck()       // re-evaluate the reel overlay on every tab/app switch
+                // Reel state is re-evaluated by the periodic ticker (a playing reel would starve a
+                // per-event debounce); here we only drive the M3 text read.
                 scheduleTextRead(packageName)  // M3.0
             }
 
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
-                // Re-check when the active surface's content settles (in-app tab switch, lazy loads).
+                // Re-read text when the active surface's content settles (in-app tab switch, lazy
+                // loads). Reel detection is handled by the ticker, not here.
                 val fgPkg = ForegroundAppTracker.currentPackage
                 if (fgPkg != null && packageName == fgPkg) {
-                    scheduleReelCheck()
                     scheduleContentRead(packageName)  // M3.0
                 }
             }
@@ -212,7 +269,8 @@ class ForegroundService : AccessibilityService() {
 
     companion object {
         private const val TAG = "ForegroundService"
-        private const val REEL_CHECK_DELAY_MS = 250L      // debounce reel checks
+        private const val REEL_TICK_MS = 700L             // periodic reel re-check cadence
+        private const val REEL_CLEAR_STREAK = 2           // negative reads before a block lifts (anti-flicker)
         private const val REEL_SCAN_MAX_NODES = 1_500     // bound the view-id scan
         private const val TEXT_READ_DELAY_MS = 800L       // state-changed text debounce
         private const val CONTENT_READ_DELAY_MS = 1_500L  // content-changed text debounce
