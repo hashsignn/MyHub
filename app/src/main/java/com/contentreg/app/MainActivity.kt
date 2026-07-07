@@ -10,6 +10,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.contentreg.app.core.data.di.ServiceLocator
 import com.contentreg.app.core.permissions.PermissionRouter
 import com.contentreg.app.core.sensing.ForegroundAppTracker
+import com.contentreg.app.core.util.PrivateDns
 import com.contentreg.app.databinding.ActivityMainBinding
 import com.contentreg.app.detox.DetoxFormat
 import com.contentreg.app.detox.DetoxSetupActivity
@@ -154,6 +155,8 @@ class MainActivity : AppCompatActivity() {
         // Re-check on resume: the user may have toggled a permission in system settings and returned.
         refreshAccessibilityState()
         refreshVpnButton()
+        binding.privateDnsWarning.visibility =
+            if (PrivateDns.isActive(this)) android.view.View.VISIBLE else android.view.View.GONE
     }
 
     private fun refreshAccessibilityState() {

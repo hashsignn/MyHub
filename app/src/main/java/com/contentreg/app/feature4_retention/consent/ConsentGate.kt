@@ -13,7 +13,8 @@ object ConsentGate {
 
     /** Bump this whenever the disclosure copy (strings.consent_body) changes materially. */
     // v2: reel-blocking replaced the time-budget wording in the disclosure.
-    const val CURRENT_CONSENT_VERSION = 2
+    // v3: added reels-networking, local crash-log and Digital Detox disclosures.
+    const val CURRENT_CONSENT_VERSION = 3
 
     /**
      * True when consent must be (re)collected: the stored version is absent (0) or older than the
