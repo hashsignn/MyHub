@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ── Design system (dark) — same names as values/colors.xml so the theme
+         picks the right one automatically in dark mode. ───────────────────── -->
+    <color name="brand_primary">#9FB0FF</color>        <!-- lighter accent reads better on dark -->
+    <color name="brand_primary_dark">#7C8FF0</color>
+    <color name="on_brand">#00104A</color>
+    <color name="brand_secondary">#4DD6C0</color>
+    <color name="on_secondary">#00201A</color>
+
+    <color name="app_background">#101216</color>
+    <color name="app_surface">#1A1D23</color>
+    <color name="app_surface_variant">#242830</color>
+    <color name="app_outline">#343945</color>
+
+    <color name="text_primary">#E7E8EE</color>
+    <color name="text_secondary">#AEB3C0</color>
+
+    <color name="status_ok">#7FD98A</color>
+    <color name="status_warn">#F2A6A2</color>
+</resources>

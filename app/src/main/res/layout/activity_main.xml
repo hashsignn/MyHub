@@ -1,151 +1,233 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Dev harness: permission state, the live foreground package, and URL-filter controls.
-     A ScrollView keeps it usable; the polished stats live in DashboardActivity. -->
+<!-- Home screen. Grouped into flat, rounded cards for a fast, scannable, friendly layout.
+     Every view id here matches what MainActivity binds — behaviour is unchanged, only the
+     presentation. Plain Views + a single ScrollView keeps it instant (no heavy transitions). -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:scrollbars="none">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:paddingHorizontal="20dp"
+        android:paddingTop="28dp"
+        android:paddingBottom="24dp">
 
+        <!-- Header -->
         <TextView
             android:id="@+id/titleText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
             android:text="@string/app_name"
-            android:textSize="24sp"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="30sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/statusText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
+            android:layout_marginTop="4dp"
+            android:textColor="?android:attr/textColorSecondary"
             android:textSize="14sp"
-            tools:text="Phase 0 — build pipeline OK" />
+            tools:text="ContentReg — reel &amp; content blocking." />
 
-        <!-- Permissions -->
-        <TextView
-            android:id="@+id/accessibilityStateText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            tools:text="Accessibility: OFF — tap below to enable" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/enableAccessibilityButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/m10_enable_accessibility" />
-
-        <TextView
-            android:id="@+id/overlayStateText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            tools:text="Overlay permission: OFF — needed to block" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/grantOverlayButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/m13_grant_overlay" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/openSettingsButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/m14_open_settings" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/openOnboardingButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/m41_open_onboarding" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/openDashboardButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/m42_open_dashboard" />
-
-        <!-- Live sensing readouts -->
-        <TextView
-            android:id="@+id/foregroundLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="@string/m10_foreground_label"
-            android:textSize="14sp" />
-
-        <TextView
-            android:id="@+id/foregroundPackageText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textIsSelectable="true"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            tools:text="com.instagram.android" />
-
-        <!-- URL filter (M2.1) -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:text="@string/m21_section"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/vpnToggleButton"
+        <!-- Setup / permissions -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.ContentReg.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/m21_start_vpn" />
+            android:layout_marginTop="20dp">
 
-        <EditText
-            android:id="@+id/blockDomainEdit"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/home_section_setup"
+                    android:textAppearance="@style/TextAppearance.ContentReg.Section" />
+
+                <TextView
+                    android:id="@+id/accessibilityStateText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    tools:text="Accessibility: OFF — tap below to enable" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/enableAccessibilityButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/m10_enable_accessibility" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="16dp"
+                    android:background="@color/app_outline" />
+
+                <TextView
+                    android:id="@+id/overlayStateText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    tools:text="Overlay permission: OFF — needed to block" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/grantOverlayButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/m13_grant_overlay" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- URL filter -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.ContentReg.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:autofillHints="domain"
-            android:hint="@string/m21_block_domain_hint"
-            android:inputType="textUri"
-            android:maxLines="1" />
+            android:layout_marginTop="16dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/blockDomainButton"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/m21_block_domain" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/registryCountText"
-            android:layout_width="wrap_content"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/home_section_filter"
+                    android:textAppearance="@style/TextAppearance.ContentReg.Section" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/vpnToggleButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/m21_start_vpn" />
+
+                <TextView
+                    android:id="@+id/registryCountText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="13sp"
+                    tools:text="Blocked entries in registry: 102" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="@string/m21_block_domain_hint">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/blockDomainEdit"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:autofillHints="domain"
+                        android:inputType="textUri"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/blockDomainButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_gravity="end"
+                    android:text="@string/m21_block_domain" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Right now (live foreground app) -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.ContentReg.Card"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textSize="14sp"
-            tools:text="Blocked entries in registry: 3" />
+            android:layout_marginTop="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/foregroundLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/home_section_now"
+                    android:textAppearance="@style/TextAppearance.ContentReg.Section" />
+
+                <TextView
+                    android:id="@+id/foregroundPackageText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textIsSelectable="true"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="com.instagram.android" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- More / navigation -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.ContentReg.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/home_section_more"
+                    android:textAppearance="@style/TextAppearance.ContentReg.Section" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/openSettingsButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/m14_open_settings" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/openDashboardButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/m42_open_dashboard" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/openOnboardingButton"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/m41_open_onboarding" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 

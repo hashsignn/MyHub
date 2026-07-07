@@ -1,11 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- M0.0 — base app theme (Material Components, no action bar). -->
+    <!-- Base app theme (Material Components, DayNight, no action bar).
+         Colours come from the design-system names, which resolve light/dark automatically. -->
     <style name="Theme.ContentRegApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorOnSecondary">@color/black</item>
+        <item name="colorPrimary">@color/brand_primary</item>
+        <item name="colorPrimaryVariant">@color/brand_primary_dark</item>
+        <item name="colorOnPrimary">@color/on_brand</item>
+        <item name="colorSecondary">@color/brand_secondary</item>
+        <item name="colorSecondaryVariant">@color/brand_secondary</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+
+        <item name="android:colorBackground">@color/app_background</item>
+        <item name="colorSurface">@color/app_surface</item>
+        <item name="colorOnBackground">@color/text_primary</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:windowBackground">@color/app_background</item>
+
+        <!-- System bars follow the app background for an edge-to-edge, cohesive look. -->
+        <item name="android:statusBarColor">@color/app_background</item>
+        <item name="android:navigationBarColor">@color/app_background</item>
+        <!-- Dark status-bar icons on the light background; @bool flips to false in night mode. -->
+        <item name="android:windowLightStatusBar">@bool/light_status_bar</item>
+
+        <!-- Rounded shapes for cards/buttons/fields (modern, friendly). -->
+        <item name="shapeAppearanceSmallComponent">@style/Shape.ContentReg.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/Shape.ContentReg.Medium</item>
+    </style>
+
+    <style name="Shape.ContentReg.Small" parent="ShapeAppearance.MaterialComponents.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <style name="Shape.ContentReg.Medium" parent="ShapeAppearance.MaterialComponents.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">18dp</item>
+    </style>
+
+    <!-- Reusable card style: flat, hairline-outlined, rounded — no heavy shadows. -->
+    <style name="Widget.ContentReg.Card" parent="Widget.MaterialComponents.CardView">
+        <item name="cardBackgroundColor">?attr/colorSurface</item>
+        <item name="cardElevation">0dp</item>
+        <item name="strokeColor">@color/app_outline</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="cardCornerRadius">18dp</item>
+        <item name="contentPadding">18dp</item>
+    </style>
+
+    <!-- Section heading inside a card. -->
+    <style name="TextAppearance.ContentReg.Section" parent="TextAppearance.MaterialComponents.Overline">
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textStyle">bold</item>
     </style>
 </resources>

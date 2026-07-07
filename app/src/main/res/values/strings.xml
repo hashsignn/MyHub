@@ -111,4 +111,10 @@
     <string name="dashboard_blocks">Blocks triggered: %1$d</string>
     <string name="dashboard_streak">Daily streak: %1$d days</string>
     <string name="dashboard_registry">Sites in block registry: %1$d</string>
+
+    <!-- Home screen section headings. -->
+    <string name="home_section_setup">Setup</string>
+    <string name="home_section_filter">URL filter</string>
+    <string name="home_section_now">Right now</string>
+    <string name="home_section_more">More</string>
 </resources>

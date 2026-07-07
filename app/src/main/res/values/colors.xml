@@ -1,12 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Legacy names kept for any stray references. -->
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- M1.3 — near-opaque scrim for the block overlay. -->
+    <!-- Block overlay scrim (near-opaque so the feed underneath is fully covered). -->
     <color name="overlay_scrim">#F2101418</color>
     <color name="overlay_text_secondary">#FFB0BEC5</color>
+
+    <!-- ── Design system (light) ─────────────────────────────────────────────
+         One calm, trustworthy palette used across every screen via theme attrs,
+         so light/dark stay consistent and no screen hardcodes its own colors. -->
+    <color name="brand_primary">#3D5AFE</color>        <!-- indigo accent -->
+    <color name="brand_primary_dark">#2C3FC4</color>
+    <color name="on_brand">#FFFFFF</color>
+    <color name="brand_secondary">#00BFA5</color>      <!-- teal -->
+    <color name="on_secondary">#04261F</color>
+
+    <color name="app_background">#F5F6FA</color>       <!-- page bg -->
+    <color name="app_surface">#FFFFFF</color>          <!-- cards -->
+    <color name="app_surface_variant">#EEF0F7</color>  <!-- inset fields -->
+    <color name="app_outline">#DFE2EC</color>          <!-- hairline borders -->
+
+    <color name="text_primary">#171A21</color>
+    <color name="text_secondary">#5B6070</color>
+
+    <color name="status_ok">#1E8E3E</color>            <!-- protected / on -->
+    <color name="status_warn">#C5221F</color>          <!-- needs setup / off -->
 </resources>
