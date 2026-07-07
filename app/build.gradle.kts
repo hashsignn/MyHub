@@ -23,7 +23,11 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8: shrink + obfuscate for a smaller, harder-to-reverse release APK. Keep rules live
+            // in proguard-rules.pro. Test the release build once after changing keep rules — a
+            // missing rule surfaces as a runtime crash, not a compile error.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
