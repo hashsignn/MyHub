@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Exposes only the private logs directory to the share sheet via FileProvider. -->
+<paths>
+    <files-path
+        name="logs"
+        path="logs/" />
+</paths>

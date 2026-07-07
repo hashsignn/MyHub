@@ -20,6 +20,7 @@ import com.contentreg.app.feature2_url.FilterVpnService
 import com.contentreg.app.feature2_url.registry.BlockEntrySource
 import com.contentreg.app.feature4_retention.consent.ConsentActivity
 import com.contentreg.app.feature4_retention.consent.ConsentGate
+import com.contentreg.app.feature4_retention.logs.LogsActivity
 import com.contentreg.app.feature4_retention.onboarding.OnboardingActivity
 import com.contentreg.app.feature4_retention.stats.DashboardActivity
 import kotlinx.coroutines.flow.first
@@ -60,6 +61,9 @@ class MainActivity : AppCompatActivity() {
         }
         binding.openDashboardButton.setOnClickListener {
             startActivity(Intent(this, DashboardActivity::class.java))
+        }
+        binding.openLogsButton.setOnClickListener {
+            startActivity(Intent(this, LogsActivity::class.java))
         }
 
         // Task 1 — consent gate before onboarding on first launch (consent must precede any grant).

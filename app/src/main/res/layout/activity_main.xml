@@ -269,6 +269,14 @@
                     android:text="@string/m42_open_dashboard" />
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/openLogsButton"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/m_open_logs" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/openOnboardingButton"
                     style="@style/Widget.MaterialComponents.Button.TextButton"
                     android:layout_width="match_parent"

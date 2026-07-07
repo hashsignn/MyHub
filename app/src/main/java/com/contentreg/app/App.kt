@@ -2,6 +2,7 @@ package com.contentreg.app
 
 import android.app.Application
 import com.contentreg.app.core.data.di.ServiceLocator
+import com.contentreg.app.core.util.CrashReporter
 import com.contentreg.app.feature2_url.classifier.BlocklistSeeder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +20,7 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        CrashReporter.install(this) // first, so we capture crashes during the rest of startup
         ServiceLocator.init(this)
         appScope.launch {
             BlocklistSeeder.seedIfNeeded(

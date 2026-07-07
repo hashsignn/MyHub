@@ -19,6 +19,9 @@
     <!-- M1.3 — draw the block screen over other apps. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
+    <!-- Digital Detox — the "alarm" haptic when a lockdown is armed. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!-- M1.4 — see launchable apps so the settings picker can list them (Android 11+ visibility). -->
     <queries>
         <intent>
@@ -126,6 +129,24 @@
             android:name=".detox.DetoxUnlockActivity"
             android:exported="false"
             android:label="@string/detox_unlock_title" />
+
+        <!-- Local crash-log viewer. -->
+        <activity
+            android:name=".feature4_retention.logs.LogsActivity"
+            android:exported="false"
+            android:label="@string/logs_title"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- FileProvider — shares the local crash log via the share sheet (private storage only). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <!-- M2.1 — local DNS-filtering VPN (BIND_VPN_SERVICE-guarded; only the system binds it).
              Bug #6: foregroundServiceType=specialUse keeps the service alive when backgrounded. -->

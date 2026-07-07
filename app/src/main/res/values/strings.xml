@@ -168,4 +168,13 @@
     <string name="detox_unlock_signature_hint">Type your signature to unlock</string>
     <string name="detox_unlock_button">Unlock now</string>
     <string name="detox_unlock_done">Detox ended. Welcome back.</string>
+
+    <!-- ── Crash logs (local, user-shareable) ─────────────────────────────────────────────────── -->
+    <string name="logs_title">Logs</string>
+    <string name="m_open_logs">Crash logs</string>
+    <string name="logs_note">If the app ever crashes, the details are recorded here on your device. Nothing is sent anywhere automatically — tap Share to send a log if you want to report a problem.</string>
+    <string name="logs_empty">No crashes recorded. Nothing to show yet.</string>
+    <string name="logs_share">Share log</string>
+    <string name="logs_clear">Clear</string>
+    <string name="logs_share_subject">ContentReg crash log</string>
 </resources>

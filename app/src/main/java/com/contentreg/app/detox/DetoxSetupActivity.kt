@@ -97,6 +97,7 @@ class DetoxSetupActivity : AppCompatActivity() {
             .setPositiveButton(R.string.detox_confirm_yes) { _, _ ->
                 val durationMs = selectedDurationMs()
                 val allowed = appChecks.filterValues { it.isChecked }.keys.toSet()
+                DetoxAlarm.fire(this) // the "alarm": vibrate + tone so arming feels deliberate
                 lifecycleScope.launch {
                     controller.start(durationMs, allowed)
                     Toast.makeText(
