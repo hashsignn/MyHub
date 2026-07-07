@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -72,11 +73,51 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { prefs -> prefs[KEY_CONSENT_VERSION] = version }
     }
 
+    // ── Digital Detox ────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * The user's "signature" phrase — a passphrase they set once and must re-type to arm a detox
+     * (and to unlock early). It exists purely as intentional friction, so it's stored in the clear;
+     * it guards nothing sensitive. Empty = not yet set.
+     */
+    val detoxSignature: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_DETOX_SIGNATURE] ?: ""
+    }
+
+    suspend fun setDetoxSignature(signature: String) {
+        context.dataStore.edit { prefs -> prefs[KEY_DETOX_SIGNATURE] = signature }
+    }
+
+    /**
+     * Epoch-millis when the current detox lockdown ends. 0 (or a time in the past) = no active detox.
+     * Stored as an absolute time so a device reboot or process death can't shorten or reset it — the
+     * lockdown is honoured for the remaining wall-clock duration.
+     */
+    val detoxEndTimeMs: Flow<Long> = context.dataStore.data.map { prefs ->
+        prefs[KEY_DETOX_END_TIME] ?: 0L
+    }
+
+    /** Packages the user may still open during a detox (everything else is covered by the overlay). */
+    val detoxAllowedApps: Flow<Set<String>> = context.dataStore.data.map { prefs ->
+        prefs[KEY_DETOX_ALLOWED_APPS] ?: emptySet()
+    }
+
+    /** Writes the active-detox window and allow-list atomically. endTimeMs=0 clears the detox. */
+    suspend fun setDetox(endTimeMs: Long, allowedApps: Set<String>) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_DETOX_END_TIME] = endTimeMs
+            prefs[KEY_DETOX_ALLOWED_APPS] = allowedApps
+        }
+    }
+
     companion object {
         private val KEY_BLOCKED_REEL_APPS = stringSetPreferencesKey("blocked_reel_apps")
         private val KEY_BLOCKLIST_SEED_VERSION = intPreferencesKey("blocklist_seed_version")
         private val KEY_APP_DISGUISE = stringPreferencesKey("app_disguise")
         private val KEY_ONBOARDING_COMPLETE = booleanPreferencesKey("onboarding_complete")
         private val KEY_CONSENT_VERSION = intPreferencesKey("consent_version")
+        private val KEY_DETOX_SIGNATURE = stringPreferencesKey("detox_signature")
+        private val KEY_DETOX_END_TIME = longPreferencesKey("detox_end_time")
+        private val KEY_DETOX_ALLOWED_APPS = stringSetPreferencesKey("detox_allowed_apps")
     }
 }
