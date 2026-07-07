@@ -114,6 +114,19 @@
             android:label="@string/dashboard_title"
             android:parentActivityName=".MainActivity" />
 
+        <!-- Digital Detox — arm a lockdown. -->
+        <activity
+            android:name=".detox.DetoxSetupActivity"
+            android:exported="false"
+            android:label="@string/detox_setup_title"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- Digital Detox — charity early-unlock (launched from the lockdown overlay). -->
+        <activity
+            android:name=".detox.DetoxUnlockActivity"
+            android:exported="false"
+            android:label="@string/detox_unlock_title" />
+
         <!-- M2.1 — local DNS-filtering VPN (BIND_VPN_SERVICE-guarded; only the system binds it).
              Bug #6: foregroundServiceType=specialUse keeps the service alive when backgrounded. -->
         <service

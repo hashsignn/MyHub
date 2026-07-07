@@ -37,12 +37,61 @@
             android:textSize="14sp"
             tools:text="ContentReg — reel &amp; content blocking." />
 
-        <!-- Setup / permissions -->
+        <!-- Digital Detox — the red panic button. -->
         <com.google.android.material.card.MaterialCardView
             style="@style/Widget.ContentReg.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/detox_section"
+                    android:textAppearance="@style/TextAppearance.ContentReg.Section" />
+
+                <TextView
+                    android:id="@+id/detoxStatusText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="14sp"
+                    tools:text="No detox running." />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/detoxPanicButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:backgroundTint="@color/detox_red"
+                    android:paddingVertical="14dp"
+                    android:text="@string/detox_panic_button"
+                    android:textColor="@color/on_detox"
+                    android:textStyle="bold"
+                    app:cornerRadius="14dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/detox_home_hint"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Setup / permissions -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.ContentReg.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp">
 
             <LinearLayout
                 android:layout_width="match_parent"

@@ -11,6 +11,10 @@ import com.contentreg.app.core.data.di.ServiceLocator
 import com.contentreg.app.core.permissions.PermissionRouter
 import com.contentreg.app.core.sensing.ForegroundAppTracker
 import com.contentreg.app.databinding.ActivityMainBinding
+import com.contentreg.app.detox.DetoxFormat
+import com.contentreg.app.detox.DetoxSetupActivity
+import com.contentreg.app.detox.DetoxState
+import com.contentreg.app.detox.DetoxUnlockActivity
 import com.contentreg.app.feature1_doomscroll.ui.SettingsActivity
 import com.contentreg.app.feature2_url.FilterVpnService
 import com.contentreg.app.feature2_url.registry.BlockEntrySource
@@ -109,6 +113,28 @@ class MainActivity : AppCompatActivity() {
                         )
                     }
                 }
+                // Digital Detox — swap the red button between "start" and "unlock early" by state.
+                launch {
+                    ServiceLocator.detoxController.state.collect { updateDetoxUi(it) }
+                }
+            }
+        }
+    }
+
+    /** Reflects the current detox state on the home card (banner + what the red button does). */
+    private fun updateDetoxUi(state: DetoxState) {
+        if (state.isActive()) {
+            binding.detoxStatusText.text =
+                getString(R.string.detox_active_banner, DetoxFormat.compact(state.remainingMs()))
+            binding.detoxPanicButton.setText(R.string.detox_overlay_unlock)
+            binding.detoxPanicButton.setOnClickListener {
+                startActivity(Intent(this, DetoxUnlockActivity::class.java))
+            }
+        } else {
+            binding.detoxStatusText.setText(R.string.detox_inactive_status)
+            binding.detoxPanicButton.setText(R.string.detox_panic_button)
+            binding.detoxPanicButton.setOnClickListener {
+                startActivity(Intent(this, DetoxSetupActivity::class.java))
             }
         }
     }

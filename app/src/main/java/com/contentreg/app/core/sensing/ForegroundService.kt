@@ -1,12 +1,14 @@
 package com.contentreg.app.core.sensing
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.contentreg.app.core.data.di.ServiceLocator
 import com.contentreg.app.core.overlay.OverlayManager
 import com.contentreg.app.core.util.PrivacyLog
+import com.contentreg.app.detox.DetoxState
 import com.contentreg.app.feature1_doomscroll.reels.ReelApps
 import com.contentreg.app.feature1_doomscroll.reels.ReelDetector
 import com.contentreg.app.feature3_text.ScreenTextPipeline
@@ -54,6 +56,11 @@ class ForegroundService : AccessibilityService() {
     // that momentarily hides its markers between frames.
     @Volatile private var reelClearStreak = 0
 
+    // Digital Detox: live lockdown state (synced from DetoxController) + the packages that are always
+    // allowed regardless of the user's picks (this app, system UI, the home launcher).
+    @Volatile private var detoxState: DetoxState = DetoxState.INACTIVE
+    private var detoxAllowlistBase: Set<String> = emptySet()
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         // Cancel any coroutines from a prior bind, then start fresh.
@@ -62,9 +69,34 @@ class ForegroundService : AccessibilityService() {
         textReadJob = null
         lastReelBlocked = false
         Log.i(TAG, "Accessibility service connected; foreground sensing active.")
+        detoxAllowlistBase = computeDetoxAllowlistBase()
         startReelSettingsSync()
+        startDetoxSync()
         startReelTicker()
         startTextPipeline()
+    }
+
+    /** Keep the detox lockdown state in sync so the ticker enforces it without a per-tick read. */
+    private fun startDetoxSync() {
+        serviceScope.launch {
+            ServiceLocator.detoxController.state.collect { detoxState = it }
+        }
+    }
+
+    /**
+     * Packages that stay reachable during a detox no matter what the user picked: this app (so the
+     * unlock flow works), system UI, and the home launcher(s) (so "go home" isn't itself blocked).
+     */
+    private fun computeDetoxAllowlistBase(): Set<String> {
+        val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val launchers = runCatching {
+            packageManager.queryIntentActivities(home, 0).mapNotNull { it.activityInfo?.packageName }
+        }.getOrDefault(emptyList())
+        return buildSet {
+            add(applicationContext.packageName)
+            add("com.android.systemui")
+            addAll(launchers)
+        }
     }
 
     /** Keep the enabled reel-app set in sync with settings so toggles take effect immediately. */
@@ -135,6 +167,36 @@ class ForegroundService : AccessibilityService() {
             PrivacyLog.detail(TAG) { "Reel block shown for $pkg" }
         }
         lastReelBlocked = blocked
+
+        evaluateDetox(pkg)
+    }
+
+    /**
+     * Digital Detox enforcement, evaluated on the same tick. While a lockdown is active, any app not
+     * on the allow-list is covered by the full-screen detox overlay. When the window expires, the
+     * overlay comes down and the stored state is cleared once.
+     */
+    private suspend fun evaluateDetox(pkg: String?) {
+        val ds = detoxState
+        val now = System.currentTimeMillis()
+        if (ds.isActive(now)) {
+            val allowed = pkg == null ||
+                pkg in ds.allowedApps ||
+                pkg in detoxAllowlistBase
+            withContext(Dispatchers.Main) {
+                if (allowed) {
+                    ServiceLocator.detoxOverlayController.hide()
+                } else {
+                    ServiceLocator.detoxOverlayController.show(ds.endTimeMs, ds.allowedApps)
+                }
+            }
+        } else {
+            withContext(Dispatchers.Main) { ServiceLocator.detoxOverlayController.hide() }
+            // A detox that just ran out: clear the persisted window once so state stays tidy.
+            if (ds.endTimeMs != 0L && ds.endTimeMs <= now) {
+                ServiceLocator.detoxController.end()
+            }
+        }
     }
 
     /**
@@ -265,6 +327,7 @@ class ForegroundService : AccessibilityService() {
         // With the service gone there is nothing left to keep the overlay in sync — tear it down.
         serviceScope.cancel()
         ServiceLocator.overlayManager.clearAll()
+        ServiceLocator.detoxOverlayController.hide()
     }
 
     companion object {

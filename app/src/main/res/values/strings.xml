@@ -117,4 +117,55 @@
     <string name="home_section_filter">URL filter</string>
     <string name="home_section_now">Right now</string>
     <string name="home_section_more">More</string>
+
+    <!-- ── Digital Detox ──────────────────────────────────────────────────────────────────────── -->
+    <string name="detox_section">Digital Detox</string>
+    <string name="detox_panic_button">START DIGITAL DETOX</string>
+    <string name="detox_home_hint">Lock yourself to a few chosen apps for a set time. Once it starts, the only way out early is a charity donation.</string>
+    <string name="detox_active_banner">Detox active — %1$s left</string>
+    <string name="detox_inactive_status">No detox running.</string>
+
+    <!-- Setup screen. -->
+    <string name="detox_setup_title">Start a Digital Detox</string>
+    <string name="detox_setup_intro">Pick how long, choose the apps you\'re still allowed to open, then type your signature to begin. <b>Everything else will be blocked.</b> To unlock before the timer ends, you\'ll have to donate to charity — there is no other way out.</string>
+    <string name="detox_duration_heading">How long?</string>
+    <string name="detox_dur_30m">30 minutes</string>
+    <string name="detox_dur_1h">1 hour</string>
+    <string name="detox_dur_2h">2 hours</string>
+    <string name="detox_dur_4h">4 hours</string>
+    <string name="detox_dur_8h">8 hours</string>
+    <string name="detox_allowed_heading">Apps you can still use</string>
+    <string name="detox_allowed_subtitle">Tick the apps you\'ll still be allowed to open during the detox. This app stays available automatically.</string>
+    <string name="detox_signature_heading">Confirm with your signature</string>
+    <string name="detox_signature_create_hint">Create your signature (you\'ll re-type this to unlock early)</string>
+    <string name="detox_signature_confirm_hint">Type your signature to begin</string>
+    <string name="detox_signature_note">Your signature is a private phrase used only as a speed-bump — it\'s stored on your device and guards nothing else.</string>
+    <string name="detox_start_button">Lock me in</string>
+    <string name="detox_err_no_signature">Type a signature to use.</string>
+    <string name="detox_err_wrong_signature">That doesn\'t match your signature.</string>
+    <string name="detox_started">Digital Detox started.</string>
+    <string name="detox_charity_warning">Reminder: the ONLY way to unlock before the timer ends is to donate to charity. Are you sure?</string>
+    <string name="detox_confirm_yes">Yes, lock me in</string>
+    <string name="detox_cancel">Cancel</string>
+    <string name="detox_loading_apps">Loading apps…</string>
+
+    <!-- Lockdown overlay. -->
+    <string name="detox_overlay_title">Digital Detox</string>
+    <string name="detox_overlay_blocked">This app is blocked during your detox.</string>
+    <string name="detox_overlay_allowed_label">Your allowed apps</string>
+    <string name="detox_overlay_no_allowed">You didn\'t allow any extra apps.</string>
+    <string name="detox_overlay_unlock">Unlock early (donate to charity)</string>
+    <string name="detox_overlay_home">Go to home screen</string>
+
+    <!-- Charity early-unlock screen. -->
+    <string name="detox_unlock_title">Unlock early</string>
+    <string name="detox_unlock_body">You chose to lock yourself in, and the timer isn\'t up yet. As agreed when you started, the only way to unlock early is to <b>donate to a charity</b>.\n\nOpen one of the charities below, make a donation, then come back and type your signature to unlock. We can\'t verify the donation — this runs on the honour system, the same promise you made to yourself.</string>
+    <string name="detox_unlock_charity_heading">Donate to a charity</string>
+    <string name="detox_charity_givewell">GiveWell (top-rated charities)</string>
+    <string name="detox_charity_redcross">Red Cross</string>
+    <string name="detox_charity_unicef">UNICEF</string>
+    <string name="detox_unlock_confirm_heading">I\'ve donated — unlock</string>
+    <string name="detox_unlock_signature_hint">Type your signature to unlock</string>
+    <string name="detox_unlock_button">Unlock now</string>
+    <string name="detox_unlock_done">Detox ended. Welcome back.</string>
 </resources>

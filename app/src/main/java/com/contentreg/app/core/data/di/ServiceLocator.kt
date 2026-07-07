@@ -5,6 +5,7 @@ import com.contentreg.app.core.data.AppDatabase
 import com.contentreg.app.core.data.prefs.SettingsStore
 import com.contentreg.app.core.overlay.OverlayManager
 import com.contentreg.app.detox.DetoxController
+import com.contentreg.app.detox.DetoxOverlayController
 import com.contentreg.app.feature2_url.registry.RegistryRepository
 import com.contentreg.app.feature4_retention.stats.StatsRepository
 
@@ -26,6 +27,8 @@ object ServiceLocator {
     val settingsStore: SettingsStore by lazy { SettingsStore(appContext) }
 
     val detoxController: DetoxController by lazy { DetoxController(settingsStore) }
+
+    val detoxOverlayController: DetoxOverlayController by lazy { DetoxOverlayController(appContext) }
 
     val overlayManager: OverlayManager by lazy { OverlayManager(appContext) }
 
