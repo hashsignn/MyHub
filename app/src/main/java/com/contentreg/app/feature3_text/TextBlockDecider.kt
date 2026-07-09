@@ -48,8 +48,10 @@ class TextBlockDecider(
         val classification = if (inRegistry) null else classifier.classify(snapshot)
 
         when (val decision = decide(url, inRegistry, classification)) {
-            Decision.Allow ->
+            Decision.Allow -> {
+                TextBlockState.blockedPackage = null
                 withContext(Dispatchers.Main) { overlay.setReason(OverlayManager.BlockReason.TEXT, false) }
+            }
 
             Decision.BlockOnly -> {
                 if (inRegistry) {
@@ -59,12 +61,16 @@ class TextBlockDecider(
                     Log.i(TAG, "Blocking conf=${fmt(classification?.confidence)}")
                     PrivacyLog.detail(TAG) { "Blocking kw=${classification?.triggeredKeyword} url=$url" }
                 }
+                // Record the app this block belongs to so the ticker can clear it once the user
+                // leaves that app (a low-text next screen won't push a snapshot to re-evaluate here).
+                TextBlockState.blockedPackage = snapshot.packageName
                 withContext(Dispatchers.Main) { overlay.setReason(OverlayManager.BlockReason.TEXT, true) }
             }
 
             is Decision.BlockAndPersist -> {
                 Log.i(TAG, "Blocking conf=${fmt(classification?.confidence)}")
                 PrivacyLog.detail(TAG) { "Blocking kw=${classification?.triggeredKeyword} url=${decision.url}" }
+                TextBlockState.blockedPackage = snapshot.packageName
                 withContext(Dispatchers.Main) { overlay.setReason(OverlayManager.BlockReason.TEXT, true) }
                 scope.launch { persistBlock(decision) }
             }

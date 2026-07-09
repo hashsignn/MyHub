@@ -14,6 +14,7 @@ import com.contentreg.app.feature1_doomscroll.reels.ReelDetector
 import com.contentreg.app.feature3_text.ScreenTextPipeline
 import com.contentreg.app.feature3_text.ScreenTextReader
 import com.contentreg.app.feature3_text.TextBlockDecider
+import com.contentreg.app.feature3_text.TextBlockState
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -137,6 +138,19 @@ class ForegroundService : AccessibilityService() {
             ?: return // no windows this tick — leave the overlay state unchanged (avoids flicker)
 
         val pkg = eval.first
+
+        // Clear a text/URL block once the user has actually left the app it was shown on. We use this
+        // reliable active-window package (not the noisy per-event stream, which also fires for the IME
+        // and transient popups) so typing in a browser's address bar can't wrongly clear the block.
+        // The decider re-blocks via its own reads if the new app is itself bad.
+        val textBlockPkg = TextBlockState.blockedPackage
+        if (textBlockPkg != null && pkg != null && pkg != textBlockPkg) {
+            TextBlockState.blockedPackage = null
+            withContext(Dispatchers.Main) {
+                ServiceLocator.overlayManager.setReason(OverlayManager.BlockReason.TEXT, false)
+            }
+        }
+
         val rawBlocked = when {
             pkg == null || pkg !in enabledReelApps -> false
             ReelDetector.isWholeAppBlock(pkg) -> true
@@ -296,24 +310,17 @@ class ForegroundService : AccessibilityService() {
         val now = System.currentTimeMillis()
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                val previousPackage = ForegroundAppTracker.currentPackage
                 ForegroundAppTracker.update(
                     packageName = packageName,
                     className = event.className?.toString(),
                     timestampMs = now,
                 )
                 PrivacyLog.detail(TAG) { "Foreground app: $packageName" }
-                // Leaving the app that a text/URL block was showing on must clear that block
-                // immediately — the blocked content is gone. Otherwise the overlay stays stuck on
-                // the next screen (e.g. the home launcher, which has too little text to push a fresh
-                // snapshot that would re-evaluate it). A11y events arrive on the main thread, so the
-                // overlay call is safe here. The debounced read below re-blocks if the new screen is
-                // itself bad. (Reel blocks are cleared separately by the periodic ticker.)
-                if (packageName != previousPackage) {
-                    ServiceLocator.overlayManager.setReason(OverlayManager.BlockReason.TEXT, false)
-                }
                 // Reel state is re-evaluated by the periodic ticker (a playing reel would starve a
-                // per-event debounce); here we only drive the M3 text read.
+                // per-event debounce); here we only drive the M3 text read. A stuck text block is
+                // cleared by the ticker (see evaluateReelBlock) using the reliable active-window
+                // package — not this noisy event stream, which also fires for transient windows
+                // (the IME, popups) that must NOT be treated as "left the app".
                 scheduleTextRead(packageName)  // M3.0
             }
 
