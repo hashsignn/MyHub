@@ -11,6 +11,12 @@
     <color name="overlay_scrim">#F2101418</color>
     <color name="overlay_text_secondary">#FFB0BEC5</color>
 
+    <!-- Solid (fully opaque) block screen for text/URL blocks — light theme = white bg, dark text.
+         Reel blocks keep the translucent scrim above; only text/URL blocks use these. -->
+    <color name="block_solid_bg">#FFFFFFFF</color>
+    <color name="block_solid_text">#FF171A21</color>
+    <color name="block_solid_hint">#FF5B6070</color>
+
     <!-- ── Design system (light) ─────────────────────────────────────────────
          One calm, trustworthy palette used across every screen via theme attrs,
          so light/dark stay consistent and no screen hardcodes its own colors. -->

@@ -296,12 +296,22 @@ class ForegroundService : AccessibilityService() {
         val now = System.currentTimeMillis()
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                val previousPackage = ForegroundAppTracker.currentPackage
                 ForegroundAppTracker.update(
                     packageName = packageName,
                     className = event.className?.toString(),
                     timestampMs = now,
                 )
                 PrivacyLog.detail(TAG) { "Foreground app: $packageName" }
+                // Leaving the app that a text/URL block was showing on must clear that block
+                // immediately — the blocked content is gone. Otherwise the overlay stays stuck on
+                // the next screen (e.g. the home launcher, which has too little text to push a fresh
+                // snapshot that would re-evaluate it). A11y events arrive on the main thread, so the
+                // overlay call is safe here. The debounced read below re-blocks if the new screen is
+                // itself bad. (Reel blocks are cleared separately by the periodic ticker.)
+                if (packageName != previousPackage) {
+                    ServiceLocator.overlayManager.setReason(OverlayManager.BlockReason.TEXT, false)
+                }
                 // Reel state is re-evaluated by the periodic ticker (a playing reel would starve a
                 // per-event debounce); here we only drive the M3 text read.
                 scheduleTextRead(packageName)  // M3.0

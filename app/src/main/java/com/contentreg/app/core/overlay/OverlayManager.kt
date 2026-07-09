@@ -58,6 +58,9 @@ class OverlayManager(private val context: Context) {
         }
         val view = overlay ?: addOverlay() ?: return
         view.setSubtitle(context.getString(subtitleRes()))
+        // Reel blocks stay translucent; text/URL blocks are fully opaque (theme black/white) so the
+        // blocked page is completely hidden. Reel wins when both are active (matches subtitleRes()).
+        view.setOpaque(opaque = BlockReason.REEL !in activeReasons)
     }
 
     private fun addOverlay(): BlockOverlayView? {
