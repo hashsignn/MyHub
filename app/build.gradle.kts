@@ -1,6 +1,18 @@
 // M0.0 — app module build config.
 // Dependencies are added milestone-by-milestone: Phase 0 only needs core UI + test libs.
 // Room/DataStore (M1.2), WorkManager (M1.4), etc. are added when their milestone lands.
+import java.io.FileInputStream
+import java.util.Properties
+
+// Release signing is driven by a gitignored keystore.properties at the repo root (see RELEASE.md).
+// When it's absent (fresh clone, CI without secrets) the project still configures and builds — the
+// release APK is simply produced unsigned instead of failing the build.
+val keystorePropsFile = rootProject.file("keystore.properties")
+val hasReleaseKeystore = keystorePropsFile.exists()
+val keystoreProps = Properties().apply {
+    if (hasReleaseKeystore) FileInputStream(keystorePropsFile).use { load(it) }
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -21,6 +33,17 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             // R8: shrink + obfuscate for a smaller, harder-to-reverse release APK. Keep rules live
@@ -32,6 +55,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            // Signed only when keystore.properties is present; otherwise the APK builds unsigned.
+            if (hasReleaseKeystore) signingConfig = signingConfigs.getByName("release")
         }
     }
 

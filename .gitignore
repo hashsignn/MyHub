@@ -39,6 +39,7 @@ captures/
 # Keystore files (do not commit signing keys)
 *.jks
 *.keystore
+keystore.properties
 
 # Kotlin
 .kotlin/
