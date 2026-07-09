@@ -131,6 +131,7 @@ Android Studio before trusting the ✅.**
 | Enforcement | ✅ code | On the existing 700ms reel tick, `ForegroundService.evaluateDetox()` covers any app not on the allow-list (+ this app, systemui, launcher) with a full-screen `DetoxOverlayController` window (1s countdown, allowed-app launch buttons, Home, unlock-early). Timer expiry auto-ends + clears once. |
 | Charity early-unlock | ✅ code | `DetoxUnlockActivity`: charity links (GiveWell/Red Cross/UNICEF) + signature-confirm exit. Honour system, stated in-app. |
 | Home UI | ✅ code | Red panic button + state banner (start ⇄ unlock) in `activity_main`. |
+| Settings section | ✅ code | `SettingsActivity` detox section: shows active/remaining + whether a signature is set, and lets you set/change the signature — **locked while a detox is active** (re-checked at commit time) so it can't be used to skip the charity unlock. |
 | Tests | ✅ | `DetoxStateTest`, `DetoxFormatTest` (pure). Controller/overlay device-verified (coupled to DataStore/WindowManager). |
 | **Known limit** | — | Bypassable by disabling the a11y service / force-stop (can't hard-lock a normal app — accepted). Overlay app-launch relies on the `SYSTEM_ALERT_WINDOW` background-launch exemption. |
 
@@ -154,8 +155,8 @@ Android Studio before trusting the ✅.**
 
 > **Open items after this phase:** compile/run verification of all the above; on-device tuning of
 > reel markers (esp. Snapchat) + a real VPN validation pass; `targetSdk 34→35` if Play is a goal;
-> a "change signature / view active detox" entry in Settings; an on-device ML model in the
-> `ModelClassifier` seam. Phase 5 (AOSP/ROM) remains deliberately deferred.
+> an on-device ML model in the `ModelClassifier` seam. Phase 5 (AOSP/ROM) remains deliberately
+> deferred.
 
 ---
 

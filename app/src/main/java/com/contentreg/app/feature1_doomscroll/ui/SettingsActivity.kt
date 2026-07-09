@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.widget.CheckBox
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
@@ -13,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import com.contentreg.app.R
 import com.contentreg.app.core.data.di.ServiceLocator
 import com.contentreg.app.databinding.ActivitySettingsBinding
+import com.contentreg.app.detox.DetoxFormat
 import com.contentreg.app.feature4_retention.AppDisguise
 import com.contentreg.app.feature4_retention.IconAliasController
 import com.contentreg.app.feature4_retention.admin.AdminController
@@ -60,10 +62,76 @@ class SettingsActivity : AppCompatActivity() {
         title = getString(R.string.settings_title)
 
         setupReels()
+        setupDetox()
         setupDisguisePicker()
         setupPrivacy()
         setupAdmin()
         setupShortcut()
+    }
+
+    /** Digital Detox — show status and manage the signature (locked while a detox is active). */
+    private fun setupDetox() {
+        binding.detoxSaveSignatureButton.setOnClickListener { onSaveSignature() }
+        refreshDetoxUi()
+    }
+
+    private fun refreshDetoxUi() {
+        lifecycleScope.launch {
+            val controller = ServiceLocator.detoxController
+            val state = controller.snapshot()
+            val hasSignature = controller.hasSignature.first()
+            val active = state.isActive()
+
+            binding.detoxSettingsStatus.text = if (active) {
+                getString(
+                    R.string.settings_detox_active,
+                    DetoxFormat.compact(state.remainingMs()),
+                    state.allowedApps.size,
+                )
+            } else {
+                getString(R.string.settings_detox_inactive)
+            }
+            binding.detoxSignatureStatus.setText(
+                if (hasSignature) R.string.detox_sig_set else R.string.detox_sig_unset,
+            )
+
+            // Lock signature editing during a detox — otherwise "change signature → unlock" would
+            // sidestep the charity early-unlock entirely.
+            binding.detoxSignatureLockNote.visibility = if (active) View.VISIBLE else View.GONE
+            binding.detoxCurrentSignatureEdit.isEnabled = !active
+            binding.detoxNewSignatureEdit.isEnabled = !active
+            binding.detoxSaveSignatureButton.isEnabled = !active
+            // The "current signature" field only matters when replacing an existing one.
+            binding.detoxCurrentSignatureEdit.visibility =
+                if (!active && hasSignature) View.VISIBLE else View.GONE
+        }
+    }
+
+    private fun onSaveSignature() {
+        val newSignature = binding.detoxNewSignatureEdit.text?.toString()?.trim().orEmpty()
+        val currentInput = binding.detoxCurrentSignatureEdit.text?.toString()?.trim().orEmpty()
+        lifecycleScope.launch {
+            val controller = ServiceLocator.detoxController
+            // Re-check at commit time: never change the signature while a detox is running.
+            if (controller.snapshot().isActive()) {
+                toast(getString(R.string.detox_sig_locked))
+                refreshDetoxUi()
+                return@launch
+            }
+            if (newSignature.isEmpty()) {
+                toast(getString(R.string.detox_sig_need_new))
+                return@launch
+            }
+            if (controller.hasSignature.first() && !controller.matchesSignature(currentInput)) {
+                toast(getString(R.string.detox_err_wrong_signature))
+                return@launch
+            }
+            controller.setSignature(newSignature)
+            binding.detoxCurrentSignatureEdit.text?.clear()
+            binding.detoxNewSignatureEdit.text?.clear()
+            toast(getString(R.string.detox_sig_saved))
+            refreshDetoxUi()
+        }
     }
 
     /** Which short-video surfaces are blocked; synced live into the accessibility service. */
@@ -129,6 +197,8 @@ class SettingsActivity : AppCompatActivity() {
         super.onResume()
         // Re-read admin state after returning from the system activation screen.
         refreshAdminUi()
+        // Detox may have been armed/ended elsewhere (home screen, overlay) since we loaded.
+        refreshDetoxUi()
     }
 
     /** Task 3 — pick a photo and pin a custom-icon home-screen shortcut that opens the app. */

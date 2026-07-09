@@ -178,6 +178,19 @@
     <string name="logs_clear">Clear</string>
     <string name="logs_share_subject">ContentReg crash log</string>
 
+    <!-- Digital Detox — Settings section (status + signature management). -->
+    <string name="settings_detox_heading">Digital Detox</string>
+    <string name="settings_detox_active">Active — %1$s left, %2$d app(s) allowed</string>
+    <string name="settings_detox_inactive">Not running.</string>
+    <string name="detox_sig_set">A signature is set.</string>
+    <string name="detox_sig_unset">No signature set yet — you\'ll create one when you start your first detox, or set it here.</string>
+    <string name="detox_sig_current_hint">Current signature</string>
+    <string name="detox_sig_new_hint">New signature</string>
+    <string name="detox_sig_save">Save signature</string>
+    <string name="detox_sig_locked">Your signature is locked while a detox is running — that\'s what stops it being used to skip the charity unlock. You can change it once the detox ends.</string>
+    <string name="detox_sig_saved">Signature saved.</string>
+    <string name="detox_sig_need_new">Enter a new signature.</string>
+
     <!-- Private DNS warning (URL filter can\'t see encrypted DNS). -->
     <string name="private_dns_warning">⚠ Private DNS is on, so the URL filter can\'t inspect these lookups and some sites may slip past it. Reel and on-screen-text blocking still work. To let the URL filter work, set Private DNS to Off in Android Settings → Network → Private DNS.</string>
 </resources>
