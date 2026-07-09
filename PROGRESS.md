@@ -118,6 +118,47 @@ Kept in sync as each milestone lands. Legend: ✅ done · 🚧 in progress · �
 
 ---
 
+## Phase 4.5 — Digital Detox, logging & shipping (post-scan)
+
+Additive work after the core features. **⚠️ Written but not yet compiled/run on device — verify in
+Android Studio before trusting the ✅.**
+
+### Digital Detox (red panic button)
+| Item | Status | Notes |
+|---|---|---|
+| State + controller | ✅ code | `detox/DetoxState` (active/remaining derived from an absolute end-time → survives reboot) + `DetoxController` over `SettingsStore` (signature, end-time, allow-list). Wired in `ServiceLocator`. |
+| Arm flow | ✅ code | `DetoxSetupActivity`: duration (30m–8h) + allow-list of launchable apps (`InstalledApps`) + signature confirm (creates first time, matches after). Explicit "only a charity donation unlocks early" dialog gates start. `DetoxAlarm` = vibrate + tone. |
+| Enforcement | ✅ code | On the existing 700ms reel tick, `ForegroundService.evaluateDetox()` covers any app not on the allow-list (+ this app, systemui, launcher) with a full-screen `DetoxOverlayController` window (1s countdown, allowed-app launch buttons, Home, unlock-early). Timer expiry auto-ends + clears once. |
+| Charity early-unlock | ✅ code | `DetoxUnlockActivity`: charity links (GiveWell/Red Cross/UNICEF) + signature-confirm exit. Honour system, stated in-app. |
+| Home UI | ✅ code | Red panic button + state banner (start ⇄ unlock) in `activity_main`. |
+| Tests | ✅ | `DetoxStateTest`, `DetoxFormatTest` (pure). Controller/overlay device-verified (coupled to DataStore/WindowManager). |
+| **Known limit** | — | Bypassable by disabling the a11y service / force-stop (can't hard-lock a normal app — accepted). Overlay app-launch relies on the `SYSTEM_ALERT_WINDOW` background-launch exemption. |
+
+### Crash logs (local, user-shareable)
+| Item | Status | Notes |
+|---|---|---|
+| Capture | ✅ code | `CrashReporter` installs an uncaught-exception handler in `App.onCreate` → appends stack traces to a private, 256KB-capped file, then defers to the platform handler. Nothing auto-sent. |
+| View / share / clear | ✅ code | `LogsActivity` + `FileProvider` (private `logs/` only). Reachable from home → More. R8 keeps line numbers; de-obfuscate a shared log via `mapping.txt`. |
+
+### Private-DNS warning
+| Item | Status | Notes |
+|---|---|---|
+| Detect + warn | ✅ code | `PrivateDns.isActive()` reads `private_dns_mode`; home shows a warning when on (DoT bypasses the VPN filter; reel/text blocking unaffected). Checked on resume. |
+
+### Consent & release hardening
+| Item | Status | Notes |
+|---|---|---|
+| Consent v3 | ✅ | `ConsentGate.CURRENT_CONSENT_VERSION = 3` (re-prompts). Adds reels-networking (no screen data leaves device), local crash-log, and Digital-Detox charity-unlock disclosures. |
+| R8 for release | ✅ code | `isMinifyEnabled` + `isShrinkResources` on; `proguard-rules.pro` keeps enum names (persisted `.name()`) + line numbers. **Smoke-test the release build.** |
+| Signing + distribution | ✅ | `signingConfig` via gitignored `keystore.properties` (+ `.example`); `RELEASE.md` documents keystore → signed APK → GitHub Releases / website sideload → updates → AAB/Play path. |
+
+> **Open items after this phase:** compile/run verification of all the above; on-device tuning of
+> reel markers (esp. Snapchat) + a real VPN validation pass; `targetSdk 34→35` if Play is a goal;
+> a "change signature / view active detox" entry in Settings; an on-device ML model in the
+> `ModelClassifier` seam. Phase 5 (AOSP/ROM) remains deliberately deferred.
+
+---
+
 ### How to build (Phase 0)
 1. Open the repo root in **Android Studio** (it contains `settings.gradle.kts`).
 2. Let it sync (downloads AGP 8.6.1, Kotlin 2.0.20, AndroidX deps).
